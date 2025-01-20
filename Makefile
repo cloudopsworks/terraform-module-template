@@ -1,5 +1,6 @@
 SHELL := /bin/bash
 TRONADOR_AUTO_INIT := true
+GITVERSION ?= $(INSTALL_PATH)/gitversion
 define PROVIDER_CHOMP
 provider "aws" {
   alias = "default"
@@ -21,3 +22,26 @@ temp_provider:
 ## Lint terraform code
 lint: temp_provider
 	$(SELF) tofu/install tofu/get-modules tofu/get-plugins tofu/lint tofu/validate
+
+get_version: packages/install/gitversion
+	$(call assert-set,GITVERSION)
+	VER_NUM := v$(shell $(GITVERSION) -output json -showvariable MajorMinorPatch)
+	VER_MAJOR := $(shell echo $(VER_NUM) | cut -f1 -d.)
+	VER_MINOR := $(shell echo $(VER_NUM) | cut -f2 -d.)
+	VER_PATCH := $(shell echo $(VER_NUM) | cut -f3 -d.)
+
+co_master:
+	git checkout master
+
+tag_local: co_master get_version
+	git tag -f $(VER_MAJOR).$(VER_MINOR)
+	git tag -f $(VER_MAJOR)
+
+## Tag the current version
+tag: tag_local
+	git push origin -f $(VER_MAJOR).$(VER_MINOR)
+	git push origin -f $(VER_MAJOR)
+	git switch -
+
+## Update generate the version
+version: gitflow/version/file
