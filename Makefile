@@ -25,10 +25,10 @@ lint: temp_provider
 
 get_version: packages/install/gitversion
 	$(call assert-set,GITVERSION)
-	VER_NUM := v$(shell $(GITVERSION) -output json -showvariable MajorMinorPatch)
-	VER_MAJOR := $(shell echo $(VER_NUM) | cut -f1 -d.)
-	VER_MINOR := $(shell echo $(VER_NUM) | cut -f2 -d.)
-	VER_PATCH := $(shell echo $(VER_NUM) | cut -f3 -d.)
+	$(eval VER_NUM := v$(shell $(GITVERSION) -output json -showvariable MajorMinorPatch))
+	$(eval VER_MAJOR := $(shell echo $(VER_NUM) | cut -f1 -d.))
+	$(eval VER_MINOR := $(shell echo $(VER_NUM) | cut -f2 -d.))
+	$(eval VER_PATCH := $(shell echo $(VER_NUM) | cut -f3 -d.))
 
 co_master:
 	git checkout master
@@ -41,7 +41,7 @@ tag_local: co_master get_version
 tag: tag_local
 	git push origin -f $(VER_MAJOR).$(VER_MINOR)
 	git push origin -f $(VER_MAJOR)
-	git switch -
+	git checkout develop
 
 ## Update generate the version
 version: gitflow/version/file
