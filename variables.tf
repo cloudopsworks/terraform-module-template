@@ -6,16 +6,20 @@
 
 # Establish this is a HUB or spoke configuration
 variable "is_hub" {
-  type    = bool
-  default = false
+  description = "Is this a hub or spoke configuration?"
+  type        = bool
+  default     = false
 }
 
 variable "spoke_def" {
-  type    = string
-  default = "001"
+  description = "Spoke ID Number, must be a 3 digit number"
+  type        = string
+  default     = "001"
+  condition   = (length(var.spoke_def) == 3) && tonumber(var.spoke_def) != null
 }
 
 variable "org" {
+  description = "Organization details"
   type = object({
     organization_name = string
     organization_unit = string
@@ -25,6 +29,7 @@ variable "org" {
 }
 
 variable "extra_tags" {
-  type    = map(string)
-  default = {}
+  description = "Extra tags to add to the resources"
+  type        = map(string)
+  default     = {}
 }

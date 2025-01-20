@@ -1,0 +1,16 @@
+# Module configuration
+org:
+  # Required variables
+  organization_name: {{ .organization_name }}
+  organization_unit: {{ .organization_unit }}
+  environment_name: {{ .environment_name }}
+  environment_type: {{ .environment_type }}
+  organization_email: {{ .organization_email }}
+
+# Optional variables
+{{- range .optionalVariables }}
+# Description {{ .Description }} , Type: {{ .Type }}
+#{{ .Name }}: {{ .DefaultValue }}
+
+{{- end }}
+
