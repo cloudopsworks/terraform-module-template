@@ -1,5 +1,6 @@
 SHELL := /bin/bash
 TRONADOR_AUTO_INIT := true
+GITVERSION ?= $(INSTALL_PATH)/gitversion
 define PROVIDER_CHOMP
 provider "aws" {
   alias = "default"
@@ -9,10 +10,6 @@ provider "aws" {
 }
 endef
 export PROVIDER_CHOMP
-VER_NUM := $(shell cat .github/_VERSION)
-VER_MAJOR := $(shell echo $(VER_NUM) | cut -f1 -d.)
-VER_MINOR := $(shell echo $(VER_NUM) | cut -f2 -d.)
-VER_PATCH := $(shell echo $(VER_NUM) | cut -f3 -d.)
 
 # List of targets the `readme` target should call before generating the readme
 export README_DEPS ?= docs/targets.md docs/terraform.md
@@ -26,14 +23,17 @@ temp_provider:
 lint: temp_provider
 	$(SELF) tofu/install tofu/get-modules tofu/get-plugins tofu/lint tofu/validate
 
-.PHONY: tag
-.PHONY: tag_local
-.PHONY: version
+get_version: packages/install/gitversion
+	$(call assert-set,GITVERSION)
+	VER_NUM := v$(shell $(GITVERSION) -output json -showvariable MajorMinorPatch)
+	VER_MAJOR := $(shell echo $(VER_NUM) | cut -f1 -d.)
+	VER_MINOR := $(shell echo $(VER_NUM) | cut -f2 -d.)
+	VER_PATCH := $(shell echo $(VER_NUM) | cut -f3 -d.)
 
 co_master:
 	git checkout master
 
-tag_local: co_master
+tag_local: co_master get_version
 	git tag -f $(VER_MAJOR).$(VER_MINOR)
 	git tag -f $(VER_MAJOR)
 
