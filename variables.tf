@@ -15,7 +15,10 @@ variable "spoke_def" {
   description = "Spoke ID Number, must be a 3 digit number"
   type        = string
   default     = "001"
-  condition   = (length(var.spoke_def) == 3) && tonumber(var.spoke_def) != null
+  validation {
+    condition     = (length(var.spoke_def) == 3) && tonumber(var.spoke_def) != null
+    error_message = "The spoke_def must be a 3 digit number as string."
+  }
 }
 
 variable "org" {
