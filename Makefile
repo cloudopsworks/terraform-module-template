@@ -19,9 +19,14 @@ export README_DEPS ?= docs/targets.md docs/terraform.md
 temp_provider:
 	echo "$$PROVIDER_CHOMP" > provider.temp.tf
 
-## Lint terraform code
+## Lint terraform/opentofu code
 lint: temp_provider
 	$(SELF) tofu/install tofu/get-modules tofu/get-plugins tofu/lint tofu/validate
+
+# Format terraform/opentofu code
+fmt:
+	$(SELF) tofu/install tofu/fmt
+
 
 get_version: packages/install/gitversion
 	$(call assert-set,GITVERSION)
@@ -38,10 +43,7 @@ tag_local: co_master get_version
 	git tag -f $(VER_MAJOR)
 
 ## Tag the current version
-tag: tag_local
+tag:: tag_local
 	git push origin -f $(VER_MAJOR).$(VER_MINOR)
 	git push origin -f $(VER_MAJOR)
 	git checkout develop
-
-## Update generate the version
-version: gitflow/version/file
