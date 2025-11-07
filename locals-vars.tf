@@ -5,8 +5,7 @@
 #       GitHub: https://github.com/cloudopsworks
 #       WebSite: https://cloudops.works
 #     Distributed Under Apache v2.0 License
-#
-module "tags" {
+#module "tags" {
   source  = "cloudopsworks/tags/local"
   version = "1.0.9"
 
