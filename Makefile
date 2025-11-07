@@ -81,18 +81,18 @@ tag:: tag_local
 
 ## Initialize the project for a specific cloud provider: AWS
 init/aws:
-	@echo "aws" > .github/.provider
+	@echo -n "aws" > .github/.provider
 	@cp .cloudopsworks/aws/* .
 	@$(GIT) add .github/.provider *.tf
 
 ## Initialize the project for a specific cloud provider: GCP
 init/gcp:
-	@echo "gcp" > .github/.provider
+	@echo -n "gcp" > .github/.provider
 	@cp .cloudopsworks/gcp/* .
 	@$(GIT) add .github/.provider *.tf
 
 ## Initialize the project for a specific cloud provider: Azure RM
 init/azurerm:
-	@echo "azurerm" > .github/.provider
+	@echo -n "azurerm" > .github/.provider
 	@cp .cloudopsworks/azurerm/* .
 	@$(GIT) add .github/.provider *.tf
