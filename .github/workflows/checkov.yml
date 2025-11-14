@@ -33,8 +33,8 @@ jobs:
       - name: Determine Checkov checks
         id: checkov-checks
         run: |
-          if [ -f ".github/.provider" ]; then
-            PROVIDER=$(cat .github/.provider | tr -d '\n' | tr -d '\r')
+          if [ -f ".cloudopsworks/.provider" ]; then
+            PROVIDER=$(cat .cloudopsworks/.provider | tr -d '\n' | tr -d '\r')
             case $PROVIDER in
               aws)
                 echo "checks=CKV_AWS_*,CKV2_AWS_*" >> $GITHUB_OUTPUT
