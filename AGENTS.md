@@ -17,3 +17,14 @@ This document provides instructions for AI Agents working with this Terraform mo
   - If a `versions.tf` file exists (e.g., from `.cloudopsworks/boilerplate/aws`, `gcp`, or `azurerm`), the module is already initialized and under development.
   - You can check the current provider in `.cloudopsworks/.provider`.
   - You can modify `versions.tf` to include additional providers to help with the resolution of your task.
+- **Mandatory Header**: Each file must start with the following copyright header:
+  ```hcl
+  ##
+  # (c) 2021-2025
+  #     Cloud Ops Works LLC - https://cloudops.works/
+  #     Find us on:
+  #       GitHub: https://github.com/cloudopsworks
+  #       WebSite: https://cloudops.works
+  #     Distributed Under Apache v2.0 License
+  #
+  ```
