@@ -7,6 +7,13 @@ This document provides instructions for AI Agents working with the implementatio
 - **Use Separate Repository for Implementations**: Implementations should be stored in separate repositories to maintain modularity and version control.
   - New repositories should be named in a way that reflects their purpose and functionality, prefixed with `terraform-module-` followed by the cloud provider (e.g., `terraform-module-aws`, `terraform-module-gcp`, `terraform-module-azurerm`).
   - Initialize new repostories for GitFlow: `make gitflow/init`
+- **Supported Providers**:
+ - AWS
+ - GCP
+ - Azure
+ - MongoDB Atlas
+ - Github
+
 
 ## Implementation Repository Guidelines
 
@@ -19,8 +26,10 @@ This document provides instructions for AI Agents working with the implementatio
   - For AWS: `make init/aws`
   - For GCP: `make init/gcp`
   - For Azure: `make init/azurerm`
+  - For MongoDB Atlas: `make init/mongodb`
+  - For Github: `make init/github`
   - The initialization process for each cloud will copy its boilerplate files to the root module.
-  - If a `versions.tf` file exists (e.g., from `.cloudopsworks/boilerplate/aws`, `gcp`, or `azurerm`), the module is already initialized and under development.
+  - If a `versions.tf` file exists (e.g., from `.cloudopsworks/boilerplate/aws`, `gcp`, `azurerm`, or any other supported provider), the module is already initialized and under development.
   - You can check the current provider in `.cloudopsworks/.provider`.
   - You can modify `versions.tf` to include additional providers to help with the resolution of your task.
 - **Avoid creating spurious configuration files**:
