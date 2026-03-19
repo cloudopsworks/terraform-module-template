@@ -1,17 +1,24 @@
 name: Terraform Transit Gateway Module
 #logo: logo/logo.jpg
+badges:
+  - name: Latest Release
+    image: https://img.shields.io/github/release/<owner/repo>.svg?style=for-the-badge
+    url: https://github.com/<owner/repo>/releases/latest
+  - name: Last Updated
+    image: https://img.shields.io/github/last-commit/<owner/repo>.svg?style=for-the-badge
+    url: https://github.com/<owner/repo>/commits
 
 license: "APACHE2"
 
 copyrights:
   - name: "Cloud Ops Works LLC"
-    url: "https://cloudops.works"
-    year: "2024"
+    url: "https://cloudopsworks.co"
+    year: "2026"
 
-github_repo: cloudopsworks/terraform-module-aws-vpc-setup
+github_repo: <owner/repo>
 
 description: |-
-  VPC Module for setting up transit gateway with ResourceAccessMananger support.
+  <description>
 
 # Introduction to the project
 introduction: |-
