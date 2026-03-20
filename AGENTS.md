@@ -83,16 +83,16 @@ Upgrades to the GitFlow workflow version itself — whether minor or major — a
 
 1. Create a hotfix branch from `master`:
    ```sh
-   make gitflow/hotfix/start name=<hotfix-name>
+   make gitflow/hotfix/start
    ```
 2. Publish the hotfix branch to the remote:
    ```sh
-   make gitflow/hotfix/publish name=<hotfix-name>
+   make gitflow/hotfix/publish
    ```
 3. Apply the workflow version changes on the hotfix branch.
 4. Finish the hotfix — this merges it into both `master` and `develop`:
    ```sh
-   make gitflow/hotfix/finish name=<hotfix-name>
+   make gitflow/hotfix/finish
    ```
 5. If the `make` target is not available, merge manually using `git merge`:
    ```sh
@@ -107,11 +107,11 @@ Upgrading a module to a new **major** version of a Terraform provider (e.g., AWS
 
 1. Create a release branch from `develop`:
    ```sh
-   make gitflow/release/start version=<version>
+   make gitflow/release/start
    ```
 2. Publish the release branch to the remote:
    ```sh
-   make gitflow/release/publish version=<version>
+   make gitflow/release/publish
    ```
 3. Update `versions.tf` with the new provider version constraints and make any required compatibility changes.
 4. Validate and format the module:
@@ -121,7 +121,7 @@ Upgrading a module to a new **major** version of a Terraform provider (e.g., AWS
    ```
 5. Finish the release — this merges it into `master` and `develop` and creates the version tag:
    ```sh
-   make gitflow/release/finish version=<version>
+   make gitflow/release/finish
    ```
 6. Increment the **MAJOR** semver digit for breaking provider changes; increment **MINOR** for backwards-compatible provider upgrades.
 
