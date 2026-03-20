@@ -75,7 +75,6 @@ Module versioning follows the [GitFlow way of work](https://cloudopsworks.co/res
 
 - **Never push directly to `master`**. All changes must flow through feature, hotfix, or release branches and be merged via pull requests.
 - Follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`) for all module tags.
-- Keep a clear and descriptive `CHANGELOG` as part of every release.
 
 ### Workflow Version Upgrades (Minor or Major)
 
