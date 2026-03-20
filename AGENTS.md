@@ -65,6 +65,67 @@ This document provides instructions for AI Agents working with the implementatio
   - Validation & Linting: `make lint`
 - **Repository Management**
   - Use process as described in the contributing guidelines: https://cloudopsworks.co/resources/gitflow-way-of-work/
+
+
+## Versioning Management
+
+Module versioning follows the [GitFlow way of work](https://cloudopsworks.co/resources/gitflow-way-of-work/). Use `make` targets whenever available for branch and release operations.
+
+### General Rules
+
+- **Never push directly to `master`**. All changes must flow through feature, hotfix, or release branches and be merged via pull requests.
+- Follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`) for all module tags.
+- Keep a clear and descriptive `CHANGELOG` as part of every release.
+
+### Workflow Version Upgrades (Minor or Major)
+
+Upgrades to the GitFlow workflow version itself — whether minor or major — are treated as **hotfixes**:
+
+1. Create a hotfix branch from `master`:
+   ```sh
+   make gitflow/hotfix/start name=<hotfix-name>
+   ```
+2. Apply the workflow version changes on the hotfix branch.
+3. Finish the hotfix — this merges it into both `master` and `develop`:
+   ```sh
+   make gitflow/hotfix/finish name=<hotfix-name>
+   ```
+4. If the `make` target is not available, merge manually using `git merge`:
+   ```sh
+   git checkout develop
+   git merge --no-ff hotfix/<hotfix-name>
+   ```
+5. Hotfix changes **must always be back-merged into `develop`** to keep branches in sync.
+
+### Provider Version Upgrades (Major)
+
+Upgrading a module to a new **major** version of a Terraform provider (e.g., AWS provider `4.x` → `5.x`) constitutes a **release**:
+
+1. Create a release branch from `develop`:
+   ```sh
+   make gitflow/release/start version=<version>
+   ```
+2. Update `versions.tf` with the new provider version constraints and make any required compatibility changes.
+3. Validate and format the module:
+   ```sh
+   make fmt
+   make lint
+   ```
+4. Finish the release — this merges it into `master` and `develop` and creates the version tag:
+   ```sh
+   make gitflow/release/finish version=<version>
+   ```
+5. Increment the **MAJOR** semver digit for breaking provider changes; increment **MINOR** for backwards-compatible provider upgrades.
+
+### Summary Table
+
+| Change Type                          | Branch Type | Merges Into              | Semver Impact |
+|--------------------------------------|-------------|--------------------------|---------------|
+| Workflow version upgrade (minor/major) | `hotfix`  | `master` + `develop`     | PATCH / MINOR |
+| Provider major version upgrade       | `release`   | `master` + `develop`     | MAJOR         |
+| Provider minor/patch version upgrade | `release`   | `master` + `develop`     | MINOR / PATCH |
+| New module feature                   | `feature`   | `develop`                | MINOR         |
+| Bug fix                              | `hotfix`    | `master` + `develop`     | PATCH         |
 - **Documentation Guideline**:
   - Documentation is maintained at README.yaml
   - Can use Markdown formatting for inner documentation on sections.
