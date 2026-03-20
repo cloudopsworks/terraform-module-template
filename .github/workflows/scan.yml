@@ -65,6 +65,8 @@ jobs:
       - name: Run Checkov Checks
         id: checkov
         uses: ./bp/ci/scan/checkov
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
 
 
   secrets-scan:
@@ -86,6 +88,8 @@ jobs:
       - name: Run Secret Scanning
         id: secrets
         uses: ./bp/ci/scan/secrets
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
 
   semgrep:
     name: semgrep/ci
