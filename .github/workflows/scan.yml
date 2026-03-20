@@ -100,5 +100,18 @@ jobs:
       image: semgrep/semgrep
     if: (github.actor != 'dependabot[bot]')
     steps:
-      - uses: actions/checkout@v6
-      - run: semgrep ci --text --output=semgrep.txt --json-output=semgrep-ci.json --sarif-output=semgrep.sarif
+      - name: Checkout w/Blueprint
+        uses: cloudopsworks/blueprints/cd/checkout@v5.10
+        id: co
+        with:
+          blueprint_ref: 'v5.10'
+
+      - name: Semgrep Scan
+        if: ${{ needs.preload.outputs.semgrep_enabled == 'true' }}
+        uses: ./bp/ci/terraform/scan/semgrep
+        continue-on-error: true
+        with:
+          source_path: ${{ steps.co.outputs.source_path }}
+          semgrep_token: ${{ secrets.semgrep_token }}
+          bot_user: ${{ inputs.bot_user }}
+          token: ${{ secrets.token }}
