@@ -9,3 +9,6 @@
 #
 #secret_scan:
 #  enabled: true | false # Defaults to true, set to false to disable
+#
+#semgrep:
+#  enabled: true | false # Defaults to true, set to false to disable

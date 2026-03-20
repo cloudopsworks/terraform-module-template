@@ -33,6 +33,7 @@ jobs:
     outputs:
       checkov_enabled: ${{ steps.config.outputs.checkov_enabled }}
       secret_scan_enabled: ${{ steps.config.outputs.secret_scan_enabled }}
+      semgrep_enabled: ${{ steps.config.outputs.semgrep_enabled }}
     steps:
       - name: Checkout w/Blueprint
         uses: cloudopsworks/blueprints/cd/checkout@v5.10
@@ -93,6 +94,8 @@ jobs:
 
   semgrep:
     name: semgrep/ci
+    needs:
+      - preload
     runs-on: ubuntu-latest
     env:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_TOKEN }}
