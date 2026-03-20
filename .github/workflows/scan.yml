@@ -16,7 +16,7 @@ on:
       - master
       - develop
     paths:
-      - .github/workflows/checkov.yml
+      - scan.yml
       - '**/*.tf'
       - '**/*.tfvars'
       - '**/terraform.tfvars'
@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   checkov:
-    name: checkov
+    name: Checkov Scan
     runs-on: ubuntu-latest
     if: (github.actor != 'dependabot[bot]')
     steps:
@@ -47,4 +47,9 @@ jobs:
         if: ${{ steps.config.outputs.checkov_enabled == 'true' }}
         id: checkov
         uses: ./bp/ci/scan/checkov
+
+      - name: Run Secret Scanning
+        if: ${{ steps.config.outputs.secret_scan_enabled == 'true' }}
+        id: checkov
+        uses: ./bp/ci/scan/secrets
 
