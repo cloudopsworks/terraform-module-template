@@ -40,10 +40,7 @@ This document provides instructions for AI Agents working with the implementatio
   - Do not create local variables that are not used in the module.
   - Keep local variable names descriptive and consistent with the module's purpose.
   - Use locals to encapsulate complex expressions and improve readability.
-- **Documentation**:
-  - Document all resources, variables, and outputs with clear and concise descriptions.
-  - Use consistent formatting and structure for documentation.
-  - Include examples and usage instructions where applicable.
+- **Documentation**: See [Documentation Guidelines](#documentation-guidelines) section below.
 - **Variables**:
   - Honor structured variables instead of lots of simple variables.
   - Prefer to have a single settings variable for simplicity and maintainability.
@@ -133,16 +130,27 @@ Upgrading a module to a new **major** version of a Terraform provider (e.g., AWS
 | Provider minor/patch version upgrade | `release`   | `master` + `develop`     | MINOR / PATCH |
 | New module feature                   | `feature`   | `develop`                | MINOR         |
 | Bug fix                              | `hotfix`    | `master` + `develop`     | PATCH         |
-- **Documentation Guideline**:
-  - Documentation is maintained at README.yaml
-  - Can use Markdown formatting for inner documentation on sections.
-  - Act as an expert documentation professional, and terraform and terragrunt DevOps expert. Generated documentation should be human legible, use of tables for legibility is allowed.
-  - Complete the documentation in @variables-module.tf (or whatever was renamed to, may find multiple variables-*.tf)  in order to represent the configuration to be applied on all resources,
-    this documentation must be depicted in YAML format, and applied over each variable declaration section. Improve documentation putting after each item if its (Optional) or (Required)
-    prefixed with a comment mark # and a description of it and possible default value, for example: id: "sampleid"   # (Required)
-    The id of the item also for each item try to infer which are the possible values for them using the terraform module documentation as source, align to be more clear.
-  - Once completed with inline documentation, proceed to modify README.yaml accordingly, in order to document properly following fields:
-    name, description, introduction, usage, examples and quickstart, usage and examples must be depicted with terragrunt in mind avoid plain terraform hcl,
-    also usage must document all variables used in the module with its corresponding structure documented inline also include the YAML formatted variables full documentation.
-  - Updates: update using the criteria applied before, as new configurations were added to the module
-  - README.md generation must be done with command: `make readme` this is last step on documentation updates.
+
+
+## Documentation Guidelines
+
+> Act as an expert documentation professional and Terraform/Terragrunt DevOps expert.
+> Generated documentation must be human-legible; tables are encouraged for clarity.
+
+- **Source file**: Documentation is maintained in `README.yaml`. Inner sections may use Markdown formatting.
+- **Inline variable documentation**:
+  - Complete inline documentation in `variables-module.tf` (or its renamed equivalent; there may be multiple `variables-*.tf` files).
+  - Document each variable attribute in YAML format within the variable declaration block.
+  - After each attribute, add a comment indicating whether it is `(Required)` or `(Optional)`, a short description, and the default value when applicable. Example:
+    ```yaml
+    id: "sampleid"   # (Required) Unique identifier for the resource.
+    ```
+  - Infer and document the possible values for each attribute using the upstream Terraform provider documentation as the source.
+- **README.yaml fields**: Once inline documentation is complete, update `README.yaml` to properly document the following fields:
+  - `name`
+  - `description`
+  - `introduction`
+  - `usage` — write examples using Terragrunt HCL; avoid plain Terraform HCL. Include all module variables with their full inline-documented YAML structure.
+  - `examples` and `quickstart`
+- **Updates**: Apply the same criteria above whenever new variables or resources are added to the module.
+- **README.md generation**: Run `make readme` as the **last step** after all documentation updates are complete.
