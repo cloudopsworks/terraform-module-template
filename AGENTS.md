@@ -85,17 +85,21 @@ Upgrades to the GitFlow workflow version itself — whether minor or major — a
    ```sh
    make gitflow/hotfix/start name=<hotfix-name>
    ```
-2. Apply the workflow version changes on the hotfix branch.
-3. Finish the hotfix — this merges it into both `master` and `develop`:
+2. Publish the hotfix branch to the remote:
+   ```sh
+   make gitflow/hotfix/publish name=<hotfix-name>
+   ```
+3. Apply the workflow version changes on the hotfix branch.
+4. Finish the hotfix — this merges it into both `master` and `develop`:
    ```sh
    make gitflow/hotfix/finish name=<hotfix-name>
    ```
-4. If the `make` target is not available, merge manually using `git merge`:
+5. If the `make` target is not available, merge manually using `git merge`:
    ```sh
    git checkout develop
    git merge --no-ff hotfix/<hotfix-name>
    ```
-5. Hotfix changes **must always be back-merged into `develop`** to keep branches in sync.
+6. Hotfix changes **must always be back-merged into `develop`** to keep branches in sync.
 
 ### Provider Version Upgrades (Major)
 
@@ -105,17 +109,21 @@ Upgrading a module to a new **major** version of a Terraform provider (e.g., AWS
    ```sh
    make gitflow/release/start version=<version>
    ```
-2. Update `versions.tf` with the new provider version constraints and make any required compatibility changes.
-3. Validate and format the module:
+2. Publish the release branch to the remote:
+   ```sh
+   make gitflow/release/publish version=<version>
+   ```
+3. Update `versions.tf` with the new provider version constraints and make any required compatibility changes.
+4. Validate and format the module:
    ```sh
    make fmt
    make lint
    ```
-4. Finish the release — this merges it into `master` and `develop` and creates the version tag:
+5. Finish the release — this merges it into `master` and `develop` and creates the version tag:
    ```sh
    make gitflow/release/finish version=<version>
    ```
-5. Increment the **MAJOR** semver digit for breaking provider changes; increment **MINOR** for backwards-compatible provider upgrades.
+6. Increment the **MAJOR** semver digit for breaking provider changes; increment **MINOR** for backwards-compatible provider upgrades.
 
 ### Summary Table
 
