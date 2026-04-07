@@ -75,6 +75,23 @@ Module versioning follows GitHub Flow — a simplified branching model where fea
 - Follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`) for all module tags.
 - There is no `develop` branch — all work flows directly through feature branches to `master`. This approach simplifies the development workflow and enables continuous integration and deployment from the main branch.
 
+### Semver Commit Annotations
+
+To trigger the correct version bump in CI, include a semver annotation in your commit message or PR description:
+
+| Change Type             | Annotation keywords                        |
+|-------------------------|--------------------------------------------|
+| Major / breaking change | `+semver: major` or `+semver: breaking`    |
+| Minor / feature change  | `+semver: minor` or `+semver: feature`     |
+| Fix / patch change      | `+semver: fix` or `+semver: patch`         |
+
+Example commit messages:
+```
+feat: add support for VPC endpoints +semver: minor
+fix: correct IAM policy ARN +semver: fix
+refactor!: remove deprecated outputs +semver: breaking
+```
+
 ### New Module Features and Provider Version Upgrades
 
 All new features and provider version upgrades branch directly from `master` using the no-develop targets:
@@ -116,13 +133,14 @@ Upgrades to the workflow version itself — whether minor or major — follow th
 
 ### Summary Table
 
-| Change Type                              | Branch Type | Merges Into | Semver Impact |
-|------------------------------------------|-------------|-------------|---------------|
-| Workflow version upgrade (minor/major)   | `feature`   | `master`    | PATCH / MINOR |
-| Provider major version upgrade           | `feature`   | `master`    | MAJOR         |
-| Provider minor/patch version upgrade     | `feature`   | `master`    | MINOR / PATCH |
-| New module feature                       | `feature`   | `master`    | MINOR         |
-| Bug fix                                  | `feature`   | `master`    | PATCH         |
+| Change Type                              | Branch Type | Merges Into | Semver Impact | Annotation                          |
+|------------------------------------------|-------------|-------------|---------------|-------------------------------------|
+| Workflow version upgrade (minor/major)   | `feature`   | `master`    | PATCH / MINOR | `+semver: patch` / `+semver: minor` |
+| Provider major version upgrade           | `feature`   | `master`    | MAJOR         | `+semver: major`                    |
+| Provider minor/patch version upgrade     | `feature`   | `master`    | MINOR / PATCH | `+semver: minor` / `+semver: patch` |
+| New module feature                       | `feature`   | `master`    | MINOR         | `+semver: feature`                  |
+| Bug fix                                  | `feature`   | `master`    | PATCH         | `+semver: fix`                      |
+| Breaking / incompatible change           | `feature`   | `master`    | MAJOR         | `+semver: breaking`                 |
 
 
 ## Documentation Guidelines
