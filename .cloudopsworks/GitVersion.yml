@@ -1,0 +1,46 @@
+# GitVersion configuration for GitHub Flow
+mode: ContinuousDelivery
+continuous-delivery-fallback-tag: ci 
+branches:
+  master:
+    regex: ^(master|main)$
+    mode: ContinuousDelivery
+    tag: ''
+    increment: Patch
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+    is-source-branch-for: ['hotfix/*']
+    tracks-release-branches: false
+    is-transition-branch: false
+  feature:
+    regex: ^features?[/-]
+    mode: ContinuousDelivery
+    tag: alpha
+    increment: Minor
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    is-source-branch-for: ['master']
+    tracks-release-branches: false
+    is-transition-branch: false
+  hotfix:
+    regex: ^hotfix(es)?[/-]
+    mode: ContinuousDelivery
+    tag: beta
+    increment: Patch
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    is-source-branch-for: ['master']
+    tracks-release-branches: false
+    is-transition-branch: false
+  pull-request:
+    regex: ^(pull|pull-requests|pr)[/-]
+    mode: ContinuousDelivery
+    tag: PullRequest
+    increment: Inherit
+    prevent-increment-of-merged-branch-version: false
+    tag-number-pattern: '[/-](?<number>\d+)[-/]'
+    track-merge-target: false
+    is-source-branch-for: []
+    tracks-release-branches: false
+    is-transition-branch: false
+assembly-versioning-scheme: MajorMinorPatch

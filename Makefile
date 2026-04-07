@@ -77,7 +77,7 @@ tag_local: co_master get_version
 tag:: tag_local
 	git push origin -f $(VER_MAJOR).$(VER_MINOR)
 	git push origin -f $(VER_MAJOR)
-	git checkout develop
+	# No develop branch checkout required in GitHub Flow
 
 ## Initialize the project for a specific cloud provider: AWS
 init/aws:

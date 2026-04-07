@@ -66,13 +66,13 @@ This document provides instructions for AI Agents working with the implementatio
 
 ## Versioning Management
 
-Module versioning follows a feature-based development process branching directly from `master`. Use `make` targets whenever available for branch and release operations.
+Module versioning follows GitHub Flow — a simplified branching model where feature branches are created from and merged back into `master`. Use `make` targets whenever available for branch and release operations.
 
 ### General Rules
 
 - **Never push directly to `master`**. All changes must flow through feature or hotfix branches and be merged via pull requests.
 - Follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`) for all module tags.
-- There is no `develop` branch — feature branches are created from and merged back into `master`.
+- There is no `develop` branch — all work flows directly through feature branches to `master`. This approach simplifies the development workflow and enables continuous integration and deployment from the main branch.
 
 ### New Module Features and Provider Version Upgrades
 
