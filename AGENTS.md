@@ -6,7 +6,8 @@ This document provides instructions for AI Agents working with the implementatio
 - **Avoid In place Modification** for implementations terraform-module-template is a template repository should not contain implementations.
 - **Use Separate Repository for Implementations**: Implementations should be stored in separate repositories to maintain modularity and version control.
   - New repositories should be named in a way that reflects their purpose and functionality, prefixed with `terraform-module-` followed by the cloud provider (e.g., `terraform-module-aws`, `terraform-module-gcp`, `terraform-module-azurerm`).
-  - Initialize new repostories for GitFlow: `make gitflow/init`
+  - This template repository should be used as a boilerplate for new implementations.
+  - Use GitHub Flow way of work for template and implementation repositories.
 - **Supported Providers**:
  - AWS
  - GCP
@@ -61,7 +62,7 @@ This document provides instructions for AI Agents working with the implementatio
   - Formatting: `make fmt`
   - Validation & Linting: `make lint`
 - **Repository Management**
-  - Use process as described in the contributing guidelines: https://cloudopsworks.co/resources/gitflow-way-of-work/
+  - Use process as described in the contributing guidelines: [GitHub Flow](https://cloudopsworks.co/resources/githubflow-way-of-work/)
 
 
 ## Versioning Management
@@ -96,31 +97,32 @@ For provider upgrades, increment the semver digit accordingly: **MAJOR** for bre
 
 ### Workflow Version Upgrades (Minor or Major)
 
-Upgrades to the GitFlow workflow version itself — whether minor or major — are treated as **hotfixes**:
+Upgrades to the workflow version itself — whether minor or major — follow the same GitHub Flow feature branch process as any other change:
 
-1. Create a hotfix branch from `master`:
+1. Create a feature branch from `master`:
    ```sh
-   make gitflow/hotfix/start
+   make gitflow/feature/start-no-develop:<feature-name>
    ```
-2. Publish the hotfix branch to the remote:
+   Use a descriptive name such as `workflow-upgrade-v2` or `github-flow-migration`.
+2. Apply the workflow version changes and validate:
    ```sh
-   make gitflow/hotfix/publish
+   make fmt
+   make lint
    ```
-3. Apply the workflow version changes on the hotfix branch.
-4. Finish the hotfix — this merges it into `master`:
+3. Finish the feature — this merges it back into `master` via pull request:
    ```sh
-   make gitflow/hotfix/finish
+   make gitflow/feature/finish-no-develop:<feature-name>
    ```
 
 ### Summary Table
 
 | Change Type                              | Branch Type | Merges Into | Semver Impact |
 |------------------------------------------|-------------|-------------|---------------|
-| Workflow version upgrade (minor/major)   | `hotfix`    | `master`    | PATCH / MINOR |
+| Workflow version upgrade (minor/major)   | `feature`   | `master`    | PATCH / MINOR |
 | Provider major version upgrade           | `feature`   | `master`    | MAJOR         |
 | Provider minor/patch version upgrade     | `feature`   | `master`    | MINOR / PATCH |
 | New module feature                       | `feature`   | `master`    | MINOR         |
-| Bug fix                                  | `hotfix`    | `master`    | PATCH         |
+| Bug fix                                  | `feature`   | `master`    | PATCH         |
 
 
 ## Documentation Guidelines
