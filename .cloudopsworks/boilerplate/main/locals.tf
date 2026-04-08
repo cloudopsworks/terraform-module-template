@@ -1,17 +1,18 @@
 {{- template "copyright" . }}
 
+
 {{- if eq .provider "aws" }}
-{{- template "aws_locals" . }}
+{{ template "aws_locals" . }}
 {{- end }}
 {{- if eq .provider "azurerm" }}
-{{- template "azurerm_locals" . }}
+{{ template "azurerm_locals" . }}
 {{- end }}
 {{- if eq .provider "gcp" }}
-{{- template "gcp_locals" . }}
+{{ template "gcp_locals" . }}
 {{- end }}
 {{- if eq .provider "github" }}
-{{- template "github_locals" . }}
+{{ template "github_locals" . }}
 {{- end }}
 {{- if eq .provider "mongodb" }}
-{{- template "mongodb_locals" . }}
+{{ template "mongodb_locals" . }}
 {{- end }}

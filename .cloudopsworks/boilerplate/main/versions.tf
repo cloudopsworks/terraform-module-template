@@ -1,17 +1,17 @@
 {{- template "copyright" . }}
 
 {{- if eq .provider "aws" }}
-{{- template "aws_versions" . }}
+{{ template "aws_versions" . }}
 {{- end }}
 {{- if eq .provider "azurerm" }}
-{{- template "azurerm_versions" . }}
+{{ template "azurerm_versions" . }}
 {{- end }}
 {{- if eq .provider "gcp" }}
-{{- template "gcp_versions" . }}
+{{ template "gcp_versions" . }}
 {{- end }}
 {{- if eq .provider "github" }}
-{{- template "github_versions" . }}
+{{ template "github_versions" . }}
 {{- end }}
 {{- if eq .provider "mongodb" }}
-{{- template "mongodb_versions" . }}
+{{ template "mongodb_versions" . }}
 {{- end }}
