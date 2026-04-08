@@ -1,3 +1,3 @@
-{{ template "copyright" . }}
+{{- template "copyright" . }}
 
 {{- template "azurerm_vars" . }}

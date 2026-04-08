@@ -86,4 +86,4 @@ init/%: packages/install/boilerplate
 	$(eval PROVIDER := $(subst init/,,$@))
 	@rm -f provider.temp.tf
 	@$(BOILERPLATE) --template-url .cloudopsworks/boilerplate/main --output-folder . --var "provider=$(PROVIDER)" --disable-dependency-prompt
-	@$(GIT) add .cloudopsworks/.provider *.tf
+#	@$(GIT) add .cloudopsworks/.provider *.tf
