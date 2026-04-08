@@ -21,7 +21,7 @@ locals {
 }
 
 include "root" {
-  path = find_in_parent_folders("root.hcl")
+  path = find_in_parent_folders("{{ .RootFileName }}")
 }
 
 terraform {
@@ -38,7 +38,7 @@ inputs = {
   {{- end }}
   {{- end }}
   {{- range .optionalVariables }}
-  {{- if ne .Name "extra_tags" "is_hub" "spoke_def" "org" }}
+  {{- if not (eq .Name "extra_tags" "is_hub" "spoke_def" "org") }}
   {{ .Name }} = try(local.local_vars.{{ .Name }}, {{ .DefaultValue }})
   {{- end }}
   {{- end }}
