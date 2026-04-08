@@ -9,6 +9,7 @@
 SHELL := /bin/bash
 TRONADOR_AUTO_INIT := true
 GITVERSION ?= $(INSTALL_PATH)/gitversion
+BOILERPLATE := $(INSTALL_PATH)/boilerplate
 PROVIDER ?= $(shell cat .cloudopsworks/.provider 2>/dev/null || echo "aws")
 define PROVIDER_CHOMP_AWS
 provider "aws" {
@@ -79,37 +80,10 @@ tag:: tag_local
 	git push origin -f $(VER_MAJOR)
 	# No develop branch checkout required in GitHub Flow
 
-## Initialize the project for a specific cloud provider: AWS
-init/aws:
-	@echo -n "aws" > .cloudopsworks/.provider
+## Initialize the project for a specific cloud provider: %S
+init/%: packages/install/boilerplate
+	$(eval PROVIDER := $(subst init/,,$@))
+	@echo -n "$(PROVIDER)" > .cloudopsworks/.provider
 	@rm -f provider.temp.tf
-	@cp .cloudopsworks/boilerplate/aws/* .
-	@$(GIT) add .cloudopsworks/.provider *.tf
-
-## Initialize the project for a specific cloud provider: GCP
-init/gcp:
-	@echo -n "gcp" > .cloudopsworks/.provider
-	@rm -f provider.temp.tf
-	@cp .cloudopsworks/boilerplate/gcp/* .
-	@$(GIT) add .cloudopsworks/.provider *.tf
-
-## Initialize the project for a specific cloud provider: Azure RM
-init/azurerm:
-	@echo -n "azurerm" > .cloudopsworks/.provider
-	@rm -f provider.temp.tf
-	@cp .cloudopsworks/boilerplate/azurerm/* .
-	@$(GIT) add .cloudopsworks/.provider *.tf
-
-## Initialize the project for a specific cloud provider: MongoDB Atlas Provider
-init/mongodb:
-	@echo -n "mongodb" > .cloudopsworks/.provider
-	@rm -f provider.temp.tf
-	@cp .cloudopsworks/boilerplate/mongodb/* .
-	@$(GIT) add .cloudopsworks/.provider *.tf
-
-## Initialize the project for a specific cloud provider: Github Provider
-init/github:
-	@echo -n "github" > .cloudopsworks/.provider
-	@rm -f provider.temp.tf
-	@cp .cloudopsworks/boilerplate/github/* .
+	@(BOILERPLATE) --template-url .cloudopsworks/boilerplate/main --output-folder . --vars "provider=$(PROVIDER)" --disable-dependency-prompt
 	@$(GIT) add .cloudopsworks/.provider *.tf
