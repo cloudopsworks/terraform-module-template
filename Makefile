@@ -8,8 +8,6 @@
 #
 SHELL := /bin/bash
 TRONADOR_AUTO_INIT := true
-GITVERSION ?= $(INSTALL_PATH)/gitversion
-BOILERPLATE := $(INSTALL_PATH)/boilerplate
 PROVIDER ?= $(shell cat .cloudopsworks/.provider 2>/dev/null || echo "aws")
 define PROVIDER_CHOMP_AWS
 provider "aws" {
@@ -38,6 +36,9 @@ export PROVIDER_CHOMP_AZURERM
 export README_DEPS ?= docs/targets.md docs/terraform.md
 
 -include $(shell curl -sSL -o .tronador "https://cowk.io/acc"; echo .tronador)
+
+GITVERSION ?= $(INSTALL_PATH)/gitversion
+BOILERPLATE := $(INSTALL_PATH)/boilerplate
 
 temp_provider:
 ifeq ($(PROVIDER),gcp)
@@ -83,7 +84,6 @@ tag:: tag_local
 ## Initialize the project for a specific cloud provider: %S
 init/%: packages/install/boilerplate
 	$(eval PROVIDER := $(subst init/,,$@))
-	@echo -n "$(PROVIDER)" > .cloudopsworks/.provider
 	@rm -f provider.temp.tf
-	@(BOILERPLATE) --template-url .cloudopsworks/boilerplate/main --output-folder . --vars "provider=$(PROVIDER)" --disable-dependency-prompt
+	@$(BOILERPLATE) --template-url .cloudopsworks/boilerplate/main --output-folder . --var "provider=$(PROVIDER)" --disable-dependency-prompt
 	@$(GIT) add .cloudopsworks/.provider *.tf

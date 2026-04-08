@@ -37,6 +37,9 @@ dependencies:
     template-url: ../mongodb
     output-folder: .
     skip: "{{ ne .provider \"mongodb\" }}"
+  - name: dot_provider
+    template-url: ../dot_provider
+    output-folder: ./.cloudopsworks
 
 partials:
   - ../parts/*.tftpl
