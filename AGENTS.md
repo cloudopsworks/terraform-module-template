@@ -165,3 +165,21 @@ Upgrades to the workflow version itself — whether minor or major — follow th
   - `examples` and `quickstart`
 - **Updates**: Apply the same criteria above whenever new variables or resources are added to the module.
 - **README.md generation**: Run `make readme` as the **last step** after all documentation updates are complete.
+
+### `.boilerplate/inputs.yaml` Guidelines
+
+The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loaded by `terragrunt.hcl` as `local.local_vars`. It must be kept in sync with the module's `variables-*.tf` files and serve as self-documenting configuration for operators.
+
+- **Scope**: Include only **module-specific** variables — those defined in `variables-module.tf` (or its renamed equivalent). Do **not** include variables that the Terragrunt hierarchy supplies automatically:
+  - `is_hub` — injected by the boilerplate/template engine
+  - `spoke_def` — sourced from `spoke-inputs.yaml`
+  - `org` — sourced from `env-inputs.yaml`
+  - `extra_tags` — built from merged tag files
+- **Comment format**: Mirror the `(Required)` / `(Optional)` YAML comment style used in `variables-*.tf`. For every key, add an inline comment with:
+  - Whether it is required or optional
+  - A short description
+  - The default value and any notes on valid values or format
+  - Example values where helpful
+- **Complex objects**: Expand all sub-keys of object variables (e.g., `settings`) as commented lines, even when the default is `{}`. This makes all available options visible to the operator without them needing to read the Terraform source.
+- **Module transformations**: If the module transforms an input value before passing it to the provider (e.g., converting a region string to uppercase-underscore format for the Atlas API), document both the expected input format and the resulting API value in the comment.
+- **Sync on change**: Whenever a variable is added, removed, or modified in `variables-*.tf`, update `.boilerplate/inputs.yaml` accordingly in the same commit.
