@@ -1,4 +1,4 @@
-{{ template "copyright" .}}
+{{ template "copyright" . }}
 
 {{- if eq .provider "aws" }}
 {{- template "aws_versions" . }}
