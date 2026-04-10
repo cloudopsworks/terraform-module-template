@@ -164,6 +164,8 @@ Upgrades to the workflow version itself — whether minor or major — follow th
   - `usage` — write examples using Terragrunt HCL; avoid plain Terraform HCL. Include all module variables with their full inline-documented YAML structure.
   - `examples` and `quickstart`
 - **Updates**: Apply the same criteria above whenever new variables or resources are added to the module.
+  - copyrights.year: if not specified or blank, set "2021", should be an year not a range, if there is a year specified leave it as is.
+  - badges: adjust the badge.image links to point to the correct repository (owner/repo).
 - **README.md generation**: Run `make readme` as the **last step** after all documentation updates are complete.
 
 ### `.boilerplate/inputs.yaml` Guidelines
