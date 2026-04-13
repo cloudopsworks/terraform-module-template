@@ -156,6 +156,9 @@ Upgrades to the workflow version itself — whether minor or major — follow th
     ```yaml
     id: "sampleid"   # (Required) Unique identifier for the resource.
     ```
+    - If the attribute is a complex object, document as a YAML block before the variable declaration as commented lines.
+    - For attributes that accept a predefined set of values (e.g., `state` with possible values `present` or `absent`), include a comment listing the valid options.
+    - Description must contain the marker of optionality and default value. Avoid embedding complex YAML descriptions, make a general description, then add the specifics in the comments.
   - Infer and document the possible values for each attribute using the upstream Terraform provider documentation as the source.
 - **README.yaml fields**: Once inline documentation is complete, update `README.yaml` to properly document the following fields:
   - `name`
