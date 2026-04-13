@@ -175,11 +175,13 @@ Upgrades to the workflow version itself — whether minor or major — follow th
 
 The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loaded by `terragrunt.hcl` as `local.local_vars`. It must be kept in sync with the module's `variables-*.tf` files and serve as self-documenting configuration for operators.
 
-- **Scope**: Include only **module-specific** variables — those defined in `variables-module.tf` (or its renamed equivalent). Do **not** include variables that the Terragrunt hierarchy supplies automatically:
-  - `is_hub` — injected by the boilerplate/template engine
-  - `spoke_def` — sourced from `spoke-inputs.yaml`
-  - `org` — sourced from `env-inputs.yaml`
-  - `extra_tags` — built from merged tag files
+- **Scope**: Include only **module-specific** variables — those defined in `variables-module.tf` (or its renamed equivalent variables-*.tf). 
+  - Do **not** include variables that the Terragrunt hierarchy supplies automatically:
+    - `is_hub` — injected by the boilerplate/template engine
+    - `spoke_def` — sourced from `spoke-inputs.yaml`
+    - `org` — sourced from `env-inputs.yaml`
+    - `extra_tags` — built from merged tag files
+  - Include all other variables declared by the module variables-*.tf files.
 - **Comment format**: Mirror the `(Required)` / `(Optional)` YAML comment style used in `variables-*.tf`. For every key, add an inline comment with:
   - Whether it is required or optional
   - A short description
