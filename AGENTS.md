@@ -18,7 +18,11 @@ This document provides instructions for AI Agents working with the implementatio
 
 ## Implementation Repository Guidelines
 
-- **Avoid to modify**: Avoid at all costs, do not modify `locals-vars.tf`, `variables.tf`, and any files originating from the cloud provider boilerplate (e.g., `aws.tf`, `google.tf`, `azurerm.tf`, `variables-azurerm.tf`, `locals.tf`) in `.cloudopsworks/boilerplate/` (except `versions.tf`).
+- **Use make as been provided**: All commands should be run from the root of the repository.
+- **Avoid to modify**: Avoid modifying the following: 
+  - Any files originating from the cloud provider boilerplate (e.g., `aws.tf`, `google.tf`, `azurerm.tf`, `variables-azurerm.tf`, `locals.tf`) in `.cloudopsworks/boilerplate/` (except `versions.tf`).
+  - Anything under `.cloudopsworks/boilerplate/`
+  - `locals-vars.tf`, `variables.tf`, `AGENTS.md`, `CLAUDE.md`, `.github/**`, `Makefile`, `.gitignore`, `gitversion.yaml`
 - **Use variables-module.tf**:
   - Rename the word `module` in `variables-module.tf` with a proper subname depending on the purpose of this module.
   - The subname must be no more than 12 chars (e.g., `variables-vpc.tf`).
@@ -79,11 +83,11 @@ Module versioning follows GitHub Flow — a simplified branching model where fea
 
 To trigger the correct version bump in CI, include a semver annotation in your commit message or PR description:
 
-| Change Type             | Annotation keywords                        |
-|-------------------------|--------------------------------------------|
-| Major / breaking change | `+semver: major` or `+semver: breaking`    |
-| Minor / feature change  | `+semver: minor` or `+semver: feature`     |
-| Fix / patch change      | `+semver: fix` or `+semver: patch`         |
+| Change Type             | Annotation keywords                                           |
+|-------------------------|---------------------------------------------------------------|
+| Major / breaking change | `+semver: major`                                              |
+| Minor / feature change  | `+semver: minor` or `+semver: feature` or `+semver: breaking` |
+| Fix / patch change      | `+semver: fix` or `+semver: patch`                            |
 
 Example commit messages:
 ```
@@ -162,16 +166,16 @@ Key rules:
 
 ### Summary Table
 
-| Change Type                              | Branch Type | Merges Into | Semver Impact | Annotation                          |
-|------------------------------------------|-------------|-------------|---------------|-------------------------------------|
-| Workflow version upgrade (patch)         | `hotfix`    | `master`    | PATCH         | `+semver: patch`                    |
-| Workflow version upgrade (minor/major)   | `feature`   | `master`    | MINOR         | `+semver: minor`                    |
+| Change Type                             | Branch Type | Merges Into | Semver Impact | Annotation                          |
+|-----------------------------------------|-------------|-------------|---------------|-------------------------------------|
+| Workflow version upgrade (patch)        | `hotfix`    | `master`    | PATCH         | `+semver: patch`                    |
+| Workflow version upgrade (minor/major)  | `feature`   | `master`    | MINOR         | `+semver: patch`                    |
 | Documentation fix / inputs.yaml sync    | `hotfix`    | `master`    | PATCH         | `+semver: patch`                    |
-| Provider major version upgrade           | `feature`   | `master`    | MAJOR         | `+semver: major`                    |
-| Provider minor/patch version upgrade     | `feature`   | `master`    | MINOR / PATCH | `+semver: minor` / `+semver: patch` |
-| New module feature                       | `feature`   | `master`    | MINOR         | `+semver: feature`                  |
-| Bug fix                                  | `feature`   | `master`    | PATCH         | `+semver: fix`                      |
-| Breaking / incompatible change           | `feature`   | `master`    | MAJOR         | `+semver: breaking`                 |
+| Provider major version upgrade          | `feature`   | `master`    | MAJOR         | `+semver: breaking`                 |
+| Provider minor/patch version upgrade    | `feature`   | `master`    | MINOR / PATCH | `+semver: minor` / `+semver: patch` |
+| New module feature                      | `feature`   | `master`    | MINOR         | `+semver: feature`                  |
+| Bug fix                                 | `feature`   | `master`    | PATCH         | `+semver: fix`                      |
+| Breaking / incompatible change          | `feature`   | `master`    | MAJOR         | `+semver: breaking`                 |
 
 
 ## Documentation Guidelines
