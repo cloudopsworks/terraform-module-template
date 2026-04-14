@@ -16,3 +16,5 @@
 {{- if eq .provider "mongodb" }}
 {{ template "mongodb_locals" . }}
 {{- end }}
+{{ template "hoop_locals" . }}
+{{- end }}
