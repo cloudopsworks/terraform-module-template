@@ -75,10 +75,11 @@ Module versioning follows GitHub Flow — a simplified branching model where fea
 
 ### General Rules
 
-- **Never push directly to `master`**. All changes must flow through feature or hotfix branches and be merged via pull requests.
+- **Never push directly to `master`**. All changes must flow through feature or hotfix branches and be merged via pull requests, branches must be created before any change is committed.
 - Follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`) for all module tags.
 - There is no `develop` branch — all work flows directly through feature branches to `master`. This approach simplifies the development workflow and enables continuous integration and deployment from the main branch.
 - Avoid in the commit comments explicitly mentioning `+semver:` changes within changesets, describe it with other words. The semver annotations should only be present in commit messages and PR descriptions to trigger the correct version bump in CI.
+- Avoid scrubbing into Makefile or tronador utility scripts.
 
 ### Semver Commit Annotations
 
