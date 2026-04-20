@@ -18,8 +18,8 @@ This document provides instructions for AI Agents working with the implementatio
 
 ## Implementation Repository Guidelines
 
-- **Use make as been provided**: All commands should be run from the root of the repository.
-- **Avoid to modify**: Avoid modifying the following: 
+- **Use make as provided**: All commands should be run from the root of the repository.
+- **Avoid modifying**: Avoid modifying the following: 
   - Any files originating from the cloud provider boilerplate (e.g., `aws.tf`, `google.tf`, `azurerm.tf`, `variables-azurerm.tf`, `locals.tf`) in `.cloudopsworks/boilerplate/` (except `versions.tf`).
   - Anything under `.cloudopsworks/boilerplate/`
   - `locals-vars.tf`, `variables.tf`, `AGENTS.md`, `CLAUDE.md`, `.github/**`, `Makefile`, `.gitignore`, `gitversion.yaml`
@@ -62,6 +62,15 @@ This document provides instructions for AI Agents working with the implementatio
   #     Distributed Under Apache v2.0 License
   #
   ```
+- **Outputs**:
+  - Place all module outputs in `outputs.tf` at the root of the module.
+  - Every `outputs.tf` must start with the mandatory copyright header.
+  - Provide a `description` for every output — no empty descriptions.
+  - Mark outputs containing secrets or tokens with `sensitive = true`.
+  - Export specific attributes, not entire resource objects (e.g., prefer `resource.this.id` over `resource.this`).
+  - Use `snake_case` names consistent with the module's variable naming.
+  - Group related outputs together with a blank line between groups.
+  - Avoid outputs that duplicate inputs unless the provider transforms the value.
 - **Formatting, Validation & Linting**:
   - Formatting: `make fmt`
   - Validation & Linting: `make lint`
@@ -90,11 +99,13 @@ Module versioning follows GitHub Flow — a simplified branching model where fea
 
 To trigger the correct version bump in CI, include a semver annotation in your commit message or PR description:
 
-| Change Type             | Annotation keywords                                           |
-|-------------------------|---------------------------------------------------------------|
-| Major / breaking change | `+semver: major`                                              |
-| Minor / feature change  | `+semver: minor` or `+semver: feature` or `+semver: breaking` |
-| Fix / patch change      | `+semver: fix` or `+semver: patch`                            |
+| Change Type        | Annotation keywords                                           |
+|--------------------|---------------------------------------------------------------|
+| Major change only  | `+semver: major`                                              |
+| Minor / feature    | `+semver: minor` or `+semver: feature` or `+semver: breaking` |
+| Fix / patch        | `+semver: fix` or `+semver: patch` or `+semver: hotfix`       |
+
+> **Note:** `+semver: breaking` triggers a **MINOR** bump (per GitVersion config), not MAJOR. Use `+semver: major` explicitly for breaking/incompatible changes that require a MAJOR version bump.
 
 Example commit messages:
 ```
@@ -102,6 +113,11 @@ feat: add support for VPC endpoints +semver: minor
 fix: correct IAM policy ARN +semver: fix
 refactor!: remove deprecated outputs +semver: breaking
 ```
+
+### Module Dependency Management
+- Honor git submodules for module dependencies with ref to the latest release tag possible.
+- Lookup for the latest version of each module dependency when updating the submodule, specially under feature branches.
+- Note that the `make repos/upgrade` command will pull the latest template version, but it does not automatically update module dependencies. Always check and update submodule references as needed when upgrading the template or making significant changes.
 
 ### New Module Features and Provider Version Upgrades
 
@@ -116,9 +132,10 @@ All new features and provider version upgrades branch directly from `master` usi
    make fmt
    make lint
    ```
-3. Finish the feature — this merges it back into `master` via pull request:
+3. **Publish first**, then finish — the finish step requires the branch to exist on the remote:
    ```sh
-   make gitflow/feature/finish-no-develop:<feature-name>
+   make gitflow/feature/publish:<feature-name>         # push branch to remote (required before finish)
+   make gitflow/feature/finish-no-develop:<feature-name>  # creates the PR
    ```
 
 For provider upgrades, increment the semver digit accordingly: **MAJOR** for breaking provider changes (e.g., AWS `4.x` → `5.x`), **MINOR** for backwards-compatible upgrades.
@@ -173,16 +190,18 @@ Key rules:
 
 ### Summary Table
 
-| Change Type                             | Branch Type | Merges Into | Semver Impact | Annotation                          |
-|-----------------------------------------|-------------|-------------|---------------|-------------------------------------|
-| Workflow version upgrade (patch)        | `hotfix`    | `master`    | PATCH         | `+semver: patch`                    |
-| Workflow version upgrade (minor/major)  | `feature`   | `master`    | MINOR         | `+semver: patch`                    |
-| Documentation fix / inputs.yaml sync    | `hotfix`    | `master`    | PATCH         | `+semver: patch`                    |
-| Provider major version upgrade          | `feature`   | `master`    | MAJOR         | `+semver: breaking`                 |
-| Provider minor/patch version upgrade    | `feature`   | `master`    | MINOR / PATCH | `+semver: minor` / `+semver: patch` |
-| New module feature                      | `feature`   | `master`    | MINOR         | `+semver: feature`                  |
-| Bug fix                                 | `feature`   | `master`    | PATCH         | `+semver: fix`                      |
-| Breaking / incompatible change          | `feature`   | `master`    | MAJOR         | `+semver: breaking`                 |
+| Change Type                                      | Branch Type | Merges Into | Make Target             | Semver Impact | Annotation                          |
+|--------------------------------------------------|-------------|-------------|-------------------------|---------------|-------------------------------------|
+| Workflow version upgrade (patch)                 | `hotfix`    | `master`    | `make repos/upgrade`    | PATCH         | `+semver: patch`                    |
+| Workflow version upgrade (minor)                 | `feature`   | `master`    | `make repos/upgrade`    | MINOR         | `+semver: minor`                    |
+| Workflow version upgrade (major)                 | `feature`   | `master`    | `make repos/upgrade/major` | MAJOR      | `+semver: major`                    |
+| Documentation fix / inputs.yaml sync            | `hotfix`    | `master`    | —                       | PATCH         | `+semver: patch`                    |
+| Provider major version upgrade                   | `feature`   | `master`    | —                       | MAJOR         | `+semver: major`                    |
+| Provider minor/patch version upgrade             | `feature`   | `master`    | —                       | MINOR / PATCH | `+semver: minor` / `+semver: patch` |
+| New module feature                               | `feature`   | `master`    | —                       | MINOR         | `+semver: feature`                  |
+| Bug fix                                          | `feature`   | `master`    | —                       | PATCH         | `+semver: fix`                      |
+| Breaking / incompatible change (MAJOR bump)      | `feature`   | `master`    | —                       | MAJOR         | `+semver: major`                    |
+| Breaking / incompatible change (minor-compatible)| `feature`   | `master`    | —                       | MINOR         | `+semver: breaking`                 |
 
 
 ## Documentation Guidelines
