@@ -120,5 +120,5 @@ jobs:
         with:
           source_path: ${{ steps.co.outputs.source_path }}
           semgrep_token: ${{ secrets.semgrep_token }}
-          bot_user: ${{ inputs.bot_user }}
-          token: ${{ secrets.token }}
+          bot_user: ${{ vars.BOT_USER }}
+          token: ${{ secrets.BOT_TOKEN }}
