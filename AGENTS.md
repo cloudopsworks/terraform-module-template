@@ -209,6 +209,7 @@ All new features and provider version upgrades branch directly from `master` usi
    ```sh
    make gitflow/feature/finish-no-develop:<feature-name>
    ```
+6. After the PR is merged: in an implementation repository CI tags the release automatically; in **this template repository** cut it locally with `make gitflow/version/tag && make gitflow/version/publish` from an up-to-date `master`.
 
 For provider upgrades, increment the semver digit accordingly: **MAJOR** for breaking provider changes (e.g., AWS `4.x` → `5.x`), **MINOR** for backwards-compatible upgrades.
 
@@ -246,10 +247,24 @@ Workflow upgrades and documentation-only fixes are patch-level changes and use t
    make gitflow/hotfix/finish
    ```
 7. Wait for all CI checks to pass, then merge with `gh` CLI (see [PR Merge Guidelines](#pr-merge-guidelines)).
+8. In **this template repository only**, cut the release tag locally once the PR is merged and `master` is pulled — the merge-tagging workflow does not run here:
+   ```sh
+   git checkout master && git pull origin master
+   make gitflow/version/tag && make gitflow/version/publish
+   ```
 
 ### Pre-Release Tagging for Module Testing (alpha / beta)
 
 Feature and hotfix branches can publish **intermediate pre-release tags** so a module can be consumed and exercised from a real Terragrunt `ref=` before its PR is merged. This is the supported way to validate a module change end-to-end without cutting a final release.
+
+**This applies to both this template repository and every implementation repository.** The mechanism is identical in both — `.cloudopsworks/gitversion.yaml` and `.github/workflows/release-management.yml` are part of the template and are carried into each implementation, so the branch labels, the counter behaviour, and the automatic GitHub pre-release work the same everywhere. The one difference is who cuts the **final** release tag on `master`:
+
+| Repository                | Pre-release tag on a branch | Final release tag on `master`                                        |
+|---------------------------|-----------------------------|----------------------------------------------------------------------|
+| Implementation repository | run the commands manually   | automatic — `.github/workflows/pr-merge-tagging.yml` runs the same two targets after the PR merge |
+| This template repository   | run the commands manually   | run the same two commands locally on `master` after merging the PR — Actions do not currently fire for pull-request or merge events here |
+
+Pre-release tagging on a branch is always manual, in both cases.
 
 The two targets CI runs on `master` after a PR merge also work on any branch — `gitflow/version/tag` simply switches which GitVersion variable it reads:
 
