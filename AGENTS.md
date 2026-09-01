@@ -95,6 +95,7 @@ Module versioning follows GitHub Flow — a simplified branching model where fea
 - Avoid in the commit comments explicitly mentioning `+semver:` changes within changesets, describe it with other words. The semver annotations should only be present in commit messages and PR descriptions to trigger the correct version bump in CI.
 - Avoid scrubbing into Makefile or tronador utility scripts.
 - Use `make` targets for branch and release operations, which the CLI does not cover.
+- **Every release must bump the version file.** Run `make gitflow/version/file` on the branch before finishing it — see [Version File (`_VERSION`)](#version-file). A release whose `_VERSION` does not match its tag is a defect, not a style choice.
 
 <a id="tronador-cli-coverage"></a>
 - **Prefer the `tronador` CLI whenever it is installed.** Check with `command -v tronador`; if present, use the CLI subcommands instead of the equivalent `make` targets, and fall back to `make` only for operations the CLI does not implement. All commands accept the `--dry-run` and `--verbose` global flags plus a `--workdir <dir>` scoping flag.
@@ -146,7 +147,7 @@ Module versioning follows GitHub Flow — a simplified branching model where fea
   | `make docs/copyright-add`| `tronador docs copyright-add`|
   | —                        | `tronador docs init`         |
 
-  **Not covered by the CLI — use `make`:** all `gitflow/*` targets (`gitflow/hotfix/start`, `gitflow/feature/start-no-develop:<name>`, `gitflow/*/publish`, `gitflow/*/finish`, `gitflow/version/file`, `gitflow/version/tag`, `gitflow/version/publish`, `gitflow/version/semver`) and the `tag` / `tag_local` targets. Branch, version-bump, tagging, and publish operations remain `make`-only. See [Pre-Release Tagging for Module Testing](#pre-release-tagging-for-module-testing-alpha--beta) for using `gitflow/version/tag` and `gitflow/version/publish` on a branch.
+  **Not covered by the CLI — use `make`:** all `gitflow/*` targets (`gitflow/hotfix/start`, `gitflow/feature/start-no-develop:<name>`, `gitflow/*/publish`, `gitflow/*/finish`, `gitflow/version/file`, `gitflow/version/tag`, `gitflow/version/publish`, `gitflow/version/semver`) and the `tag` / `tag_local` targets. Branch, version-bump, tagging, and publish operations remain `make`-only. See [Version File (`_VERSION`)](#version-file) for `gitflow/version/file`, and [Pre-Release Tagging for Module Testing](#pre-release-tagging-for-module-testing-alpha--beta) for using `gitflow/version/tag` and `gitflow/version/publish` on a branch.
 
   Two behavioural differences to be aware of when substituting the CLI for `make`:
   - `make lint` first runs the provider-chomp step (`temp_provider`) and the `tofu/get-modules` + `tofu/get-plugins` pipeline; `tronador project lint` runs `tofu validate` followed by `tofu fmt -check` without those preparatory steps. Prefer `make lint` when linting a module whose providers or modules have not been fetched yet.
@@ -199,17 +200,22 @@ All new features and provider version upgrades branch directly from `master` usi
    ```sh
    make gitflow/feature/publish:<feature-name>   # push branch to remote
    ```
-4. Cut a pre-release tag and test the branch before finishing:
+4. **Bump the version file** — required on every release, before any pre-release tag:
+   ```sh
+   make gitflow/version/file   # writes _VERSION, commits "chore: Version Bump", pushes
+   ```
+   See [Version File (`_VERSION`)](#version-file).
+5. Cut a pre-release tag and test the branch before finishing:
    ```sh
    make gitflow/version/tag       # -> v<x.y.z>-alpha.N
    make gitflow/version/publish   # push that tag
    ```
    See [Pre-Release Tagging for Module Testing](#pre-release-tagging-for-module-testing-alpha--beta).
-5. Satisfy the [Release Gate](#release-gate), then finish — this creates the PR:
+6. Satisfy the [Release Gate](#release-gate), then finish — this creates the PR:
    ```sh
    make gitflow/feature/finish-no-develop:<feature-name>
    ```
-6. After the PR is merged: in an implementation repository CI tags the release automatically; in **this template repository** cut it locally with `make gitflow/version/tag && make gitflow/version/publish` from an up-to-date `master`.
+7. After the PR is merged: in an implementation repository CI tags the release automatically; in **this template repository** cut it locally with `make gitflow/version/tag && make gitflow/version/publish` from an up-to-date `master`.
 
 For provider upgrades, increment the semver digit accordingly: **MAJOR** for breaking provider changes (e.g., AWS `4.x` → `5.x`), **MINOR** for backwards-compatible upgrades.
 
@@ -236,22 +242,76 @@ Workflow upgrades and documentation-only fixes are patch-level changes and use t
    ```sh
    make gitflow/hotfix/publish   # push branch to remote
    ```
-5. When the hotfix touches module code, cut a pre-release tag and test it before finishing:
+5. **Bump the version file** — required on every release, including documentation-only hotfixes:
+   ```sh
+   make gitflow/version/file   # writes _VERSION, commits "chore: Version Bump", pushes
+   ```
+   See [Version File (`_VERSION`)](#version-file).
+6. When the hotfix touches module code, cut a pre-release tag and test it before finishing:
    ```sh
    make gitflow/version/tag       # -> v<x.y.z>-beta.N
    make gitflow/version/publish   # push that tag
    ```
    See [Pre-Release Tagging for Module Testing](#pre-release-tagging-for-module-testing-alpha--beta). Documentation-only hotfixes may record the gate as not applicable.
-6. Satisfy the [Release Gate](#release-gate), then finish — this creates the PR:
+7. Satisfy the [Release Gate](#release-gate), then finish — this creates the PR:
    ```sh
    make gitflow/hotfix/finish
    ```
-7. Wait for all CI checks to pass, then merge with `gh` CLI (see [PR Merge Guidelines](#pr-merge-guidelines)).
-8. In **this template repository only**, cut the release tag locally once the PR is merged and `master` is pulled — the merge-tagging workflow does not run here:
+8. Wait for all CI checks to pass, then merge with `gh` CLI (see [PR Merge Guidelines](#pr-merge-guidelines)).
+9. In **this template repository only**, cut the release tag locally once the PR is merged and `master` is pulled — the merge-tagging workflow does not run here:
    ```sh
    git checkout master && git pull origin master
    make gitflow/version/tag && make gitflow/version/publish
    ```
+
+<a id="version-file"></a>
+### Version File (`_VERSION`)
+
+Every repository in this family carries a version file that must track the released version:
+
+| Template generation | Path                       |
+|---------------------|----------------------------|
+| `>= v5.10` workflow | `.cloudopsworks/_VERSION`  |
+| `v5.9` workflow     | `.github/_VERSION`         |
+
+`make gitflow/version/file` is the **only** sanctioned way to write it. The target picks the
+correct path automatically, writes `v<MajorMinorPatch>` as computed by GitVersion for the
+current branch, commits `chore: Version Bump`, and pushes to the branch. Never hand-edit the
+file, and never write it from `master`.
+
+**Invariant:** after a release, `_VERSION` equals the release tag. `cat .cloudopsworks/_VERSION`
+and `git tag --sort=-v:refname | head -1` must agree.
+
+**Ordering matters.** Run the bump *after* publishing the branch and *before* cutting any
+pre-release tag:
+
+```
+work commit  ->  publish branch  ->  gitflow/version/file  ->  pre-release tag  ->  finish/PR  ->  merge
+```
+
+Bumping before the pre-release tag keeps the [Release Gate](#release-gate) satisfiable — the
+`chore: Version Bump` commit is then part of what the tag covers, so `git log <last-tag>..HEAD`
+stays empty. A `chore: Version Bump` commit carries no `+semver:` annotation and therefore does
+not perturb the version GitVersion computes.
+
+**Drift check.** Before finishing a branch, and when auditing a repository, compare the file
+against the latest tag:
+
+```sh
+git fetch origin --tags --prune
+printf 'file=%s tag=%s\n' \
+  "$(cat .cloudopsworks/_VERSION 2>/dev/null || cat .github/_VERSION 2>/dev/null)" \
+  "$(git tag --sort=-v:refname | head -1)"
+```
+
+If the file trails the latest tag, previous releases skipped the bump. Do **not** hand-edit to
+catch up and do **not** treat the stale value as established policy — a stale `_VERSION` is a
+defect, not a convention. The next release that runs `make gitflow/version/file` recomputes the
+value from branch history and self-heals the file in one step.
+
+**Who may write it.** Only repositories that own their version file may run this target — this
+template repository, and implementation repositories whose own `AGENTS.md` authorizes it. An
+agent must never write `_VERSION` in a repository where that authority is not established.
 
 ### Pre-Release Tagging for Module Testing (alpha / beta)
 
@@ -337,6 +397,10 @@ Before running `make gitflow/feature/finish-no-develop` / `make gitflow/hotfix/f
 2. That tag has been deployed and exercised against a real target, and the outcome reported.
 3. `tronador project format` and `tronador project lint` pass at the branch tip.
 4. No untested commits sit after the last pre-release tag — `git log <last-tag>..HEAD` must be empty, or a fresh tag must be cut and re-tested.
+5. The version file has been bumped on this branch — `git log --oneline master..HEAD -- .cloudopsworks/_VERSION .github/_VERSION` must show a `chore: Version Bump` commit. See [Version File (`_VERSION`)](#version-file).
+
+Item 5 applies to **every** release, including documentation-only work. Items 1, 2 and 4 may be
+recorded as not applicable when the module has no deployable test target; item 5 may not.
 
 If the gate cannot be satisfied — for example the module has no deployable test target — say so explicitly in the PR description rather than skipping it silently.
 
@@ -378,6 +442,8 @@ Key rules:
 ### Summary Table
 
 > **Command column:** prefer the `tronador` CLI form when it is installed; the `make` target in parentheses is the fallback.
+>
+> **Every row that merges into `master` also runs `make gitflow/version/file` on the branch before finishing** — see [Version File (`_VERSION`)](#version-file). The only exception is the pre-release row, which is not merged.
 
 | Change Type                                      | Branch Type | Merges Into | Command                 | Semver Impact | Annotation                          |
 |--------------------------------------------------|-------------|-------------|-------------------------|---------------|-------------------------------------|
