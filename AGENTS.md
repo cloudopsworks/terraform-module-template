@@ -160,19 +160,24 @@ Module versioning follows GitHub Flow — a simplified branching model where fea
 
 To trigger the correct version bump in CI, include a semver annotation in your commit message or PR description:
 
-| Change Type        | Annotation keywords                                           |
-|--------------------|---------------------------------------------------------------|
-| Major change only  | `+semver: major`                                              |
-| Minor / feature    | `+semver: minor` or `+semver: feature` or `+semver: breaking` |
-| Fix / patch        | `+semver: fix` or `+semver: patch` or `+semver: hotfix`       |
+| Change Type          | Annotation keywords                                     |
+|----------------------|---------------------------------------------------------|
+| Major / breaking     | `+semver: major` or `+semver: breaking`                 |
+| Minor / feature      | `+semver: minor` or `+semver: feature`                  |
+| Fix / patch          | `+semver: fix` or `+semver: patch` or `+semver: hotfix` |
 
-> **Note:** `+semver: breaking` triggers a **MINOR** bump (per GitVersion config), not MAJOR. Use `+semver: major` explicitly for breaking/incompatible changes that require a MAJOR version bump.
+> **Note:** `+semver: breaking` triggers a **MAJOR** bump. `.cloudopsworks/gitversion.yaml`
+> puts it in `major-version-bump-message` alongside `major`, so there is no
+> "minor-compatible breaking change" annotation — use `+semver: minor` for a change that is
+> backwards compatible, and `+semver: major` or `+semver: breaking` for one that is not.
+> Always confirm against the repository's own `major-version-bump-message` and
+> `minor-version-bump-message` before relying on an annotation.
 
 Example commit messages:
 ```
 feat: add support for VPC endpoints +semver: minor
 fix: correct IAM policy ARN +semver: fix
-refactor!: remove deprecated outputs +semver: breaking
+refactor!: remove deprecated outputs +semver: breaking   # MAJOR
 ```
 
 ### Module Dependency Management
@@ -411,8 +416,7 @@ Key rules:
 | New module feature                               | `feature`   | `master`    | —                       | MINOR         | `+semver: feature`                  |
 | Bug fix                                          | `feature`   | `master`    | —                       | PATCH         | `+semver: fix`                      |
 | Intermediate pre-release for module testing      | `feature` / `hotfix` | — (not merged) | `make gitflow/version/tag` + `make gitflow/version/publish` | PRE-RELEASE   | — (counter auto-advances)           |
-| Breaking / incompatible change (MAJOR bump)      | `feature`   | `master`    | —                       | MAJOR         | `+semver: major`                    |
-| Breaking / incompatible change (minor-compatible)| `feature`   | `master`    | —                       | MINOR         | `+semver: breaking`                 |
+| Breaking / incompatible change                   | `feature`   | `master`    | —                       | MAJOR         | `+semver: major` or `+semver: breaking` |
 
 
 ## Documentation Guidelines
