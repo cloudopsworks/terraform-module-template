@@ -517,17 +517,19 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
   - The default value and any notes on valid values or format
   - Example values where helpful
   - **Avoid** embedding any go-template syntax, for example, do not include `{{ env "ORG" }}` in the comment. Instead, describe the expected value and source (e.g., "Organization ID, sourced from env-inputs.yaml").
-- <a id="boilerplate-inputs-comment-format"></a>**Comment format**: Every comment line uses `# ` (`#` followed by exactly one
-  space), with the `#` placed at the indentation column of the line it comments.
+- <a id="boilerplate-inputs-comment-format"></a>**Comment format**: Commented configuration uses `# ` (`#` followed by exactly
+  one space) and documentation uses `## `. In both, the `#` sits at the indentation column of
+  the line it comments.
   Operators turn configuration on by toggling comments in their editor. VS Code, and
   IntelliJ IDEs configured as described in [Editor setup](#boilerplate-inputs-editor-setup),
   remove `# ` from after the leading whitespace, so uncommenting gives back valid YAML.
 
-  | Kind                    | Syntax                                                  | Purpose                                     |
-  |-------------------------|---------------------------------------------------------|---------------------------------------------|
-  | Documentation (prose)   | `# ` + text, at the indentation of the block it describes | Explains something. Never uncommented.    |
-  | Commented configuration | `# ` + the YAML line, with `#` at the key's own indentation | Valid YAML once `# ` is removed.        |
-  | Per-key documentation   | Trailing ` # (Required)/(Optional) …`                   | Stays with the key after it is uncommented. |
+  | Kind                    | Syntax                                                       | Purpose                                         |
+  |-------------------------|--------------------------------------------------------------|-------------------------------------------------|
+  | Documentation block     | `## ` + text, at the indentation of the key it describes     | Explains something. Never uncommented.          |
+  | Separator               | A line with only `#`, at the same indentation                | Ends a documentation block, before the configuration it describes. |
+  | Commented configuration | `# ` + the YAML line, with `#` at the key's own indentation  | Valid YAML once `# ` is removed.                |
+  | Per-key documentation   | Trailing ` # (Required)/(Optional) …`                        | Stays with the key after it is uncommented.     |
 
   Rules:
   1. Write the configuration as valid YAML first (2-space indentation, no tabs). Then insert
@@ -537,17 +539,25 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
   3. Put each key's `(Required)`/`(Optional)` description, default and valid values in a
      trailing comment on that key's line, so the description stays when the key is
      uncommented.
-  4. Put prose above a configuration block, never between its lines. If a description is
-     too long for a trailing comment, move it into the prose above the block.
-  5. Start prose with a capital letter, and never with `word:` or `- `, so it cannot be
-     mistaken for configuration (for example, write `# Note -` rather than `# note:`).
+  4. Write any explanation too long for a trailing comment as a documentation block: one or
+     more `## ` lines directly above the key it describes, at that key's indentation, then a
+     single `#` separator line. Never use `# ` for documentation; `# ` is reserved for
+     configuration.
+  5. Documentation blocks may sit inside a commented configuration block. When an operator
+     uncomments the whole block, each `##` loses only one `#` and stays a comment, and each
+     separator becomes an empty line, so the result is still valid YAML.
 
   Correct:
   ```yaml
-  # Module settings. Uncomment the keys you need.
+  ## Module settings.
+  ## Uncomment the keys you need. Keys left commented use the module defaults.
+  #
   name: "my-service"              # (Required) Resource name. Lowercase, max 32 chars.
   # settings:                     # (Optional) Module settings object. Default: {}.
     # state: "present"            # (Optional) Desired state: present | absent. Default: present.
+    ## Extra tags merged into the tags of every resource the module creates.
+    ## Keys and values must be strings.
+    #
     # tags:                       # (Optional) Extra tags map. Default: {}.
       # owner: "platform-team"
     # subnets:                    # (Optional) Subnet IDs. Default: [].
@@ -556,6 +566,7 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
 
   Incorrect:
   ```yaml
+  # Module settings.              # documentation written with "# " instead of "## "
   #settings:                      # no space after "#"
   #  state: "present"             # "#" at column 0 instead of at the key's indentation
   ```
@@ -584,13 +595,17 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
   commented configuration using the syntax above, even when the default is `{}`. This makes
   all available options visible to the operator without them needing to read the Terraform
   source.
-- **Validation**: Before committing, both checks must pass:
+- **Validation**: Before committing, all three checks must pass:
   ```sh
-  # Uncommenting every configuration line must produce valid YAML (prose lines are dropped)
+  # 1. Uncommenting every configuration line must produce valid YAML
+  #    (documentation and separator lines are dropped)
   sed -E -e 's/^([[:space:]]*)# ([a-z0-9_][A-Za-z0-9_.-]*:( |$)|- )/\1\2/' \
     -e '/^[[:space:]]*#/d' .boilerplate/inputs.yaml | yq '.' >/dev/null
-  # Every comment must start with exactly "# "; this must print nothing
-  grep -nE '^[[:space:]]*#([^ ]|  +)' .boilerplate/inputs.yaml
+  # 2. Comments must start with exactly "# " or "## ", or be a lone "#"; this must print nothing
+  grep -nE '^[[:space:]]*(#[^ #]|# {2,}|##[^ ]|## {2,})' .boilerplate/inputs.yaml
+  # 3. Documentation must use "## ", not "# "; this must print nothing
+  grep -nE '^[[:space:]]*# ' .boilerplate/inputs.yaml \
+    | grep -vE '^[0-9]+:[[:space:]]*# ([a-z0-9_][A-Za-z0-9_.-]*:( |$)|- )'
   ```
 - **Module transformations**: If the module transforms an input value before passing it to the provider (e.g., converting a region string to uppercase-underscore format for the Atlas API), document both the expected input format and the resulting API value in the comment.
 - **Sync on change**: Whenever a variable is added, removed, or modified in `variables-*.tf`, update `.boilerplate/inputs.yaml` accordingly in the same commit.
