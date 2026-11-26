@@ -452,10 +452,88 @@ Key rules:
     ```yaml
     id: "sampleid"   # (Required) Unique identifier for the resource.
     ```
-    - If the attribute is a complex object, document it as a commented YAML block before the variable declaration, using the comment syntax defined in [`.boilerplate/inputs.yaml` Guidelines → Comment format](#boilerplate-inputs-comment-format). This keeps the block copy-paste compatible with `inputs.yaml`.
+    - If the attribute is a complex object, document it as a commented YAML block before the variable declaration, using the column-0 syntax in [Commented YAML in `variables-*.tf`](#tf-commented-yaml-format). It carries the same keys, documentation and separators as `.boilerplate/inputs.yaml`, converted mechanically between the two forms.
     - For attributes that accept a predefined set of values (e.g., `state` with possible values `present` or `absent`), include a comment listing the valid options.
     - Description must contain the marker of optionality and default value. Avoid embedding complex YAML descriptions, make a general description, then add the specifics in the comments.
   - Infer and document the possible values for each attribute using the upstream Terraform provider documentation as the source.
+  - <a id="tf-commented-yaml-format"></a>**Commented YAML in `variables-*.tf`**: every comment
+    in a `.tf` file starts at **column 0**, and this is enforced. `tofu fmt` / `terraform fmt`
+    (run by `tronador project format`) move HCL comments to column 0, so a `#` placed at the
+    key's indentation, as in `.boilerplate/inputs.yaml`, is flattened and the YAML nesting is
+    lost. In `.tf` files the YAML indentation therefore goes **after** the comment marker.
+
+    | Kind                    | Syntax in `variables-*.tf`                                    | Same line in `.boilerplate/inputs.yaml`       |
+    |-------------------------|---------------------------------------------------------------|-----------------------------------------------|
+    | Documentation block     | `## ` at column 0, then the key's indentation, then text      | `## ` + text, at the key's indentation         |
+    | Separator               | A lone `#` at column 0                                        | A lone `#` at the key's indentation            |
+    | Commented configuration | `# ` at column 0, then the YAML line with its own indentation | `# ` + the YAML line, `#` at the key's indentation |
+    | Per-key documentation   | Trailing ` # (Required)/(Optional) …`                         | Same                                           |
+
+    Rules:
+    1. Write the configuration as valid YAML first (2-space indentation, no tabs), then put
+       `# ` in front of each whole line, indentation included. Removing the first `# ` from
+       every configuration line must give valid YAML at the right nesting level.
+    2. Never indent the `#` itself. Leading whitespace before `#` is always wrong in `.tf`
+       files, even if a later `fmt` run would fix it.
+    3. Documentation and separator lines follow the same rules as in
+       [Comment format](#boilerplate-inputs-comment-format) (`## ` for documentation, a lone
+       `#` to end it, `# ` only for configuration), but are written at column 0.
+    4. The `.tf` block and `.boilerplate/inputs.yaml` must describe the same keys. Convert
+       between them mechanically instead of rewriting either one by hand:
+       ```sh
+       # inputs.yaml form -> variables-*.tf form
+       sed -E -e 's/^[[:space:]]*#$/#/' -e 's/^( *)## /## \1/' -e 's/^( *)# /# \1/'
+       # variables-*.tf form -> inputs.yaml form
+       sed -E -e 's/^## ( *)/\1## /' -e 's/^# ( *)/\1# /'
+       ```
+       A lone `#` separator has no indentation in the `.tf` form, so after converting to
+       `inputs.yaml`, indent each separator to match the documentation block above it.
+
+    Correct (`variables-*.tf`):
+    ```hcl
+    ## Module settings.
+    ## Uncomment the keys you need. Keys left commented use the module defaults.
+    #
+    # settings:                     # (Optional) Module settings object. Default: {}.
+    #   state: "present"            # (Optional) Desired state: present | absent. Default: present.
+    ##   Extra tags merged into the tags of every resource the module creates.
+    ##   Keys and values must be strings.
+    #
+    #   tags:                       # (Optional) Extra tags map. Default: {}.
+    #     owner: "platform-team"
+    #   subnets:                    # (Optional) Subnet IDs. Default: [].
+    #     - "subnet-0abc123"
+    variable "settings" {
+    ```
+
+    Incorrect (`variables-*.tf`):
+    ```hcl
+    # settings:
+      # state: "present"            # "#" indented: fmt moves it to column 0 and the nesting is lost
+    #state: "present"               # no space after "#"
+    # Module settings.              # documentation written with "# " instead of "## "
+    ```
+
+    Validation: before committing, all four checks must pass. Run them from the module root;
+    `variables-*.tf` does not match the template-owned `variables.tf`.
+    ```sh
+    # 1. Uncommenting every configuration line in each block before a variable must give valid YAML
+    awk '/^#/ { buf = buf $0 "\n"; next } /^variable / { printf "%s---\n", buf } { buf = "" }' variables-*.tf \
+      | grep -vE '^(##( |$)|#$)' | sed -E 's/^# //' | yq ea '.' >/dev/null
+    # 2. No indented comments, and comments start with "# " or "## " or are a lone "#"; this must print nothing
+    grep -nE '^[[:space:]]+#|^(#[^ #]|##[^ ])' variables-*.tf
+    # 3. Documentation must use "## ", not "# " (the 8-line copyright header is skipped); this must print nothing
+    awk 'FNR > 8 && /^# / && !/^# +([A-Za-z0-9_][A-Za-z0-9_.-]*:( |$)|- )/ { print FILENAME":"FNR": "$0 }' variables-*.tf
+    # 4. The .tf blocks and .boilerplate/inputs.yaml must describe the same key paths; this must print nothing
+    tf_keys() { awk '/^#/ { buf = buf $0 "\n"; next } /^variable / { printf "%s---\n", buf } { buf = "" }' variables-*.tf \
+      | grep -vE '^(##( |$)|#$)' | sed -E 's/^# //' \
+      | yq ea '. as $d ireduce ({}; . * $d)' -o=props | sed -E 's/ = .*//' | grep -vE '^(#|$)' | sort; }
+    yaml_keys() { sed -E -e 's/^([[:space:]]*)# ([a-z0-9_][A-Za-z0-9_.-]*:( |$)|- )/\1\2/' \
+      -e '/^[[:space:]]*#/d' .boilerplate/inputs.yaml | yq -o=props | sed -E 's/ = .*//' | grep -vE '^(#|$)' | sort; }
+    diff <(tf_keys) <(yaml_keys)
+    ```
+    Check 1 alone does not catch a flattened block, because flattened YAML is still valid
+    YAML. Check 4 is the one that catches lost nesting.
 - **README.yaml fields**: Once inline documentation is complete, update `README.yaml` to properly document the following fields:
   - `name`
   - `description`
@@ -523,6 +601,9 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
   Operators turn configuration on by toggling comments in their editor. VS Code, and
   IntelliJ IDEs configured as described in [Editor setup](#boilerplate-inputs-editor-setup),
   remove `# ` from after the leading whitespace, so uncommenting gives back valid YAML.
+  This format applies to YAML files only: `.boilerplate/inputs.yaml` and the `inputs.yaml`
+  examples in `README.yaml`. Commented YAML in `variables-*.tf` keeps `#` at column 0; see
+  [Commented YAML in `variables-*.tf`](#tf-commented-yaml-format).
 
   | Kind                    | Syntax                                                       | Purpose                                         |
   |-------------------------|--------------------------------------------------------------|-------------------------------------------------|
@@ -564,16 +645,18 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
       # - "subnet-0abc123"
   ```
 
-  Incorrect:
+  Incorrect (in `.boilerplate/inputs.yaml`):
   ```yaml
   # Module settings.              # documentation written with "# " instead of "## "
   #settings:                      # no space after "#"
-  #  state: "present"             # "#" at column 0 instead of at the key's indentation
+  #  state: "present"             # "#" at column 0 instead of at the key's indentation (correct only in variables-*.tf)
   ```
-- <a id="boilerplate-inputs-editor-setup"></a>**Editor setup**: When creating or editing `.boilerplate/inputs.yaml` or the
-  commented YAML blocks in `variables-*.tf`, check which editor the operator uses, once per
-  session. Look for `TERM_PROGRAM=vscode`, `TERMINAL_EMULATOR=JetBrains-JediTerm`, or a
-  connected IDE MCP server. If none of these settles it, ask.
+- <a id="boilerplate-inputs-editor-setup"></a>**Editor setup**: When creating or editing `.boilerplate/inputs.yaml`, check which
+  editor the operator uses, once per session. Look for `TERM_PROGRAM=vscode`,
+  `TERMINAL_EMULATOR=JetBrains-JediTerm`, or a connected IDE MCP server. If none of these
+  settles it, ask. These settings cover YAML files only. In `variables-*.tf`, `fmt` enforces
+  column-0 comments whatever the editor does (see
+  [Commented YAML in `variables-*.tf`](#tf-commented-yaml-format)).
   - **VS Code**: no action. Its toggle-comment already inserts and removes `# `.
   - **IntelliJ IDEs** (IntelliJ IDEA, PyCharm, GoLand, WebStorm, …): the YAML comment
     settings must be the following, in *Settings → Editor → Code Style → YAML → Code
