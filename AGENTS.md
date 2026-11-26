@@ -464,7 +464,7 @@ Key rules:
 
     | Kind                    | Syntax in `variables-*.tf`                                    | Same line in `.boilerplate/inputs.yaml`       |
     |-------------------------|---------------------------------------------------------------|-----------------------------------------------|
-    | Documentation block     | `## ` at column 0, then the key's indentation, then text      | `## ` + text, at the key's indentation         |
+    | Documentation paragraph | First line `## `, continuation lines `# `, at column 0, then the key's indentation, then text | First line `## `, continuation lines `# `, at the key's indentation |
     | Separator               | A lone `#` at column 0                                        | A lone `#` at the key's indentation            |
     | Commented configuration | `# ` at column 0, then the YAML line with its own indentation | `# ` + the YAML line, `#` at the key's indentation |
     | Per-key documentation   | Trailing ` # (Required)/(Optional) …`                         | Same                                           |
@@ -475,9 +475,10 @@ Key rules:
        every configuration line must give valid YAML at the right nesting level.
     2. Never indent the `#` itself. Leading whitespace before `#` is always wrong in `.tf`
        files, even if a later `fmt` run would fix it.
-    3. Documentation and separator lines follow the same rules as in
-       [Comment format](#boilerplate-inputs-comment-format) (`## ` for documentation, a lone
-       `#` to end it, `# ` only for configuration), but are written at column 0.
+    3. Documentation paragraphs and separators follow the same rules as in
+       [Comment format](#boilerplate-inputs-comment-format) (first line `## `, continuation
+       lines `# ` that do not read as configuration, a lone `#` to close the paragraph, and a
+       lone `#` before a paragraph that follows configuration), but are written at column 0.
     4. The `.tf` block and `.boilerplate/inputs.yaml` must describe the same keys. Convert
        between them mechanically instead of rewriting either one by hand:
        ```sh
@@ -487,17 +488,18 @@ Key rules:
        sed -E -e 's/^## ( *)/\1## /' -e 's/^# ( *)/\1# /'
        ```
        A lone `#` separator has no indentation in the `.tf` form, so after converting to
-       `inputs.yaml`, indent each separator to match the documentation block above it.
+       `inputs.yaml`, indent each separator to match the documentation paragraph above it.
 
     Correct (`variables-*.tf`):
     ```hcl
     ## Module settings.
-    ## Uncomment the keys you need. Keys left commented use the module defaults.
+    # Uncomment the keys you need. Keys left commented use the module defaults.
     #
     # settings:                     # (Optional) Module settings object. Default: {}.
     #   state: "present"            # (Optional) Desired state: present | absent. Default: present.
+    #
     ##   Extra tags merged into the tags of every resource the module creates.
-    ##   Keys and values must be strings.
+    #   Keys and values must be strings.
     #
     #   tags:                       # (Optional) Extra tags map. Default: {}.
     #     owner: "platform-team"
@@ -511,22 +513,35 @@ Key rules:
     # settings:
       # state: "present"            # "#" indented: fmt moves it to column 0 and the nesting is lost
     #state: "present"               # no space after "#"
-    # Module settings.              # documentation written with "# " instead of "## "
+    # Module settings.              # documentation paragraph must start with "## "
     ```
 
     Validation: before committing, all four checks must pass. Run them from the module root;
     `variables-*.tf` does not match the template-owned `variables.tf`.
     ```sh
     # 1. Uncommenting every configuration line in each block before a variable must give valid YAML
+    #    (documentation, continuation and separator lines are dropped)
     awk '/^#/ { buf = buf $0 "\n"; next } /^variable / { printf "%s---\n", buf } { buf = "" }' variables-*.tf \
-      | grep -vE '^(##( |$)|#$)' | sed -E 's/^# //' | yq ea '.' >/dev/null
+      | sed -E -e 's/^# ( *([A-Za-z0-9_][A-Za-z0-9_.-]*:( |$)|- ))/\1/' -e '/^#/d' | yq ea '.' >/dev/null
     # 2. No indented comments, and comments start with "# " or "## " or are a lone "#"; this must print nothing
     grep -nE '^[[:space:]]+#|^(#[^ #]|##[^ ])' variables-*.tf
-    # 3. Documentation must use "## ", not "# " (the 8-line copyright header is skipped); this must print nothing
-    awk 'FNR > 8 && /^# / && !/^# +([A-Za-z0-9_][A-Za-z0-9_.-]*:( |$)|- )/ { print FILENAME":"FNR": "$0 }' variables-*.tf
+    # 3. Documentation paragraphs follow the Comment format rules at column 0
+    #    (the 8-line copyright header is skipped); this must print nothing
+    awk '
+      FNR == 1 { doc = 0; prev = "" }
+      FNR <= 8 { next }
+      /^## / {
+        if (doc) print FILENAME":"FNR": continuation line must start with \"# \", not \"## \""
+        else if (prev ~ /^# /) print FILENAME":"FNR": missing lone \"#\" between configuration and documentation"
+        doc = 1
+      }
+      doc && /^# +([A-Za-z0-9_][A-Za-z0-9_.-]*:( |$)|- )/ { print FILENAME":"FNR": configuration inside documentation: close it with a lone \"#\" or rephrase the line" }
+      /^#$/ { doc = 0 }
+      !/^#/ { if (doc) print FILENAME":"FNR": documentation not closed with a lone \"#\""; doc = 0 }
+      { prev = $0 }' variables-*.tf
     # 4. The .tf blocks and .boilerplate/inputs.yaml must describe the same key paths; this must print nothing
     tf_keys() { awk '/^#/ { buf = buf $0 "\n"; next } /^variable / { printf "%s---\n", buf } { buf = "" }' variables-*.tf \
-      | grep -vE '^(##( |$)|#$)' | sed -E 's/^# //' \
+      | sed -E -e 's/^# ( *([A-Za-z0-9_][A-Za-z0-9_.-]*:( |$)|- ))/\1/' -e '/^#/d' \
       | yq ea '. as $d ireduce ({}; . * $d)' -o=props | sed -E 's/ = .*//' | grep -vE '^(#|$)' | sort; }
     yaml_keys() { sed -E -e 's/^([[:space:]]*)# ([a-z0-9_][A-Za-z0-9_.-]*:( |$)|- )/\1\2/' \
       -e '/^[[:space:]]*#/d' .boilerplate/inputs.yaml | yq -o=props | sed -E 's/ = .*//' | grep -vE '^(#|$)' | sort; }
@@ -596,8 +611,8 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
   - Example values where helpful
   - **Avoid** embedding any go-template syntax, for example, do not include `{{ env "ORG" }}` in the comment. Instead, describe the expected value and source (e.g., "Organization ID, sourced from env-inputs.yaml").
 - <a id="boilerplate-inputs-comment-format"></a>**Comment format**: Commented configuration uses `# ` (`#` followed by exactly
-  one space) and documentation uses `## `. In both, the `#` sits at the indentation column of
-  the line it comments.
+  one space). A documentation paragraph starts with a `## ` line and continues with `# ` lines.
+  In both, the `#` sits at the indentation column of the line it comments.
   Operators turn configuration on by toggling comments in their editor. VS Code, and
   IntelliJ IDEs configured as described in [Editor setup](#boilerplate-inputs-editor-setup),
   remove `# ` from after the leading whitespace, so uncommenting gives back valid YAML.
@@ -607,8 +622,8 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
 
   | Kind                    | Syntax                                                       | Purpose                                         |
   |-------------------------|--------------------------------------------------------------|-------------------------------------------------|
-  | Documentation block     | `## ` + text, at the indentation of the key it describes     | Explains something. Never uncommented.          |
-  | Separator               | A line with only `#`, at the same indentation                | Ends a documentation block, before the configuration it describes. |
+  | Documentation paragraph | First line `## ` + text, continuation lines `# ` + text, at the indentation of the key it describes | Explains something. Never uncommented.          |
+  | Separator               | A line with only `#`, at the same indentation                | Closes a documentation paragraph before the configuration it describes; also opens a paragraph that follows commented configuration. |
   | Commented configuration | `# ` + the YAML line, with `#` at the key's own indentation  | Valid YAML once `# ` is removed.                |
   | Per-key documentation   | Trailing ` # (Required)/(Optional) …`                        | Stays with the key after it is uncommented.     |
 
@@ -616,28 +631,34 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
   1. Write the configuration as valid YAML first (2-space indentation, no tabs). Then insert
      `# ` right before the first non-space character of each line. Do not move the `#` to
      column 0, do not leave out the space, and do not add extra spaces after it.
-  2. Removing the first `# ` from each line must give valid YAML at the right nesting level.
+  2. Removing the first `# ` from each configuration line must give valid YAML at the right
+     nesting level.
   3. Put each key's `(Required)`/`(Optional)` description, default and valid values in a
      trailing comment on that key's line, so the description stays when the key is
      uncommented.
-  4. Write any explanation too long for a trailing comment as a documentation block: one or
-     more `## ` lines directly above the key it describes, at that key's indentation, then a
-     single `#` separator line. Never use `# ` for documentation; `# ` is reserved for
-     configuration.
-  5. Documentation blocks may sit inside a commented configuration block. When an operator
-     uncomments the whole block, each `##` loses only one `#` and stays a comment, and each
-     separator becomes an empty line, so the result is still valid YAML.
+  4. Write any explanation too long for a trailing comment as a documentation paragraph
+     directly above the key it describes, at that key's indentation: the first line starts
+     with `## `, each continuation line starts with `# `, and a single `#` separator line
+     closes the paragraph. When the paragraph comes right after a commented configuration
+     line, put a single `#` separator line before it as well. After a separator, a new
+     paragraph starts again with `## `.
+  5. A continuation line must not read as configuration: do not start it with a lowercase
+     key followed by `:` (e.g. `# note: …`) or with `- `. Rephrase it, or write list items
+     as `* `.
+  6. Operators uncomment configuration keys only. Documentation lines are not meant to be
+     uncommented; whoever uncomments them is responsible for fixing them back.
 
   Correct:
   ```yaml
   ## Module settings.
-  ## Uncomment the keys you need. Keys left commented use the module defaults.
+  # Uncomment the keys you need. Keys left commented use the module defaults.
   #
   name: "my-service"              # (Required) Resource name. Lowercase, max 32 chars.
   # settings:                     # (Optional) Module settings object. Default: {}.
     # state: "present"            # (Optional) Desired state: present | absent. Default: present.
+    #
     ## Extra tags merged into the tags of every resource the module creates.
-    ## Keys and values must be strings.
+    # Keys and values must be strings.
     #
     # tags:                       # (Optional) Extra tags map. Default: {}.
       # owner: "platform-team"
@@ -647,9 +668,13 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
 
   Incorrect (in `.boilerplate/inputs.yaml`):
   ```yaml
-  # Module settings.              # documentation written with "# " instead of "## "
+  # Module settings.              # documentation paragraph must start with "## "
   #settings:                      # no space after "#"
   #  state: "present"             # "#" at column 0 instead of at the key's indentation (correct only in variables-*.tf)
+  # subnets: []
+  ## Paragraph touching the configuration line above: a lone "#" separator is missing.
+  ## Second paragraph line written with "## " instead of "# ".
+  # note: values are strings      # continuation line that reads as a YAML key; rephrase it
   ```
 - <a id="boilerplate-inputs-editor-setup"></a>**Editor setup**: When creating or editing `.boilerplate/inputs.yaml`, check which
   editor the operator uses, once per session. Look for `TERM_PROGRAM=vscode`,
@@ -686,9 +711,19 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
     -e '/^[[:space:]]*#/d' .boilerplate/inputs.yaml | yq '.' >/dev/null
   # 2. Comments must start with exactly "# " or "## ", or be a lone "#"; this must print nothing
   grep -nE '^[[:space:]]*(#[^ #]|# {2,}|##[^ ]|## {2,})' .boilerplate/inputs.yaml
-  # 3. Documentation must use "## ", not "# "; this must print nothing
-  grep -nE '^[[:space:]]*# ' .boilerplate/inputs.yaml \
-    | grep -vE '^[0-9]+:[[:space:]]*# ([a-z0-9_][A-Za-z0-9_.-]*:( |$)|- )'
+  # 3. Documentation paragraphs: "## " first line, "# " continuation lines that do not read as
+  #    configuration, closed by a lone "#", and opened by a lone "#" when they follow
+  #    commented configuration; this must print nothing
+  awk '
+    /^[[:space:]]*## / {
+      if (doc) print FNR": continuation line must start with \"# \", not \"## \""
+      else if (prev ~ /^[[:space:]]*# /) print FNR": missing lone \"#\" between configuration and documentation"
+      doc = 1
+    }
+    doc && /^[[:space:]]*# ([a-z0-9_][A-Za-z0-9_.-]*:( |$)|- )/ { print FNR": configuration inside documentation: close it with a lone \"#\" or rephrase the line" }
+    /^[[:space:]]*#$/ { doc = 0 }
+    !/^[[:space:]]*#/ { if (doc) print FNR": documentation not closed with a lone \"#\""; doc = 0 }
+    { prev = $0 }' .boilerplate/inputs.yaml
   ```
 - **Module transformations**: If the module transforms an input value before passing it to the provider (e.g., converting a region string to uppercase-underscore format for the Atlas API), document both the expected input format and the resulting API value in the comment.
 - **Sync on change**: Whenever a variable is added, removed, or modified in `variables-*.tf`, update `.boilerplate/inputs.yaml` accordingly in the same commit.
