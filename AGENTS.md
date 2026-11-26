@@ -517,58 +517,80 @@ The `.boilerplate/inputs.yaml` file is the per-deployment configuration file loa
   - The default value and any notes on valid values or format
   - Example values where helpful
   - **Avoid** embedding any go-template syntax, for example, do not include `{{ env "ORG" }}` in the comment. Instead, describe the expected value and source (e.g., "Organization ID, sourced from env-inputs.yaml").
-- <a id="boilerplate-inputs-comment-format"></a>**Comment format**: The file has two kinds of comment lines, and they must look different.
-  Operators turn configuration on by uncommenting it in their editor, and most editors
-  remove only the `#`.
+- <a id="boilerplate-inputs-comment-format"></a>**Comment format**: Every comment line uses `# ` (`#` followed by exactly one
+  space), with the `#` placed at the indentation column of the line it comments.
+  Operators turn configuration on by toggling comments in their editor. VS Code, and
+  IntelliJ IDEs configured as described in [Editor setup](#boilerplate-inputs-editor-setup),
+  remove `# ` from after the leading whitespace, so uncommenting gives back valid YAML.
 
-  | Kind                    | Syntax                                     | Purpose                                     |
-  |-------------------------|--------------------------------------------|---------------------------------------------|
-  | Documentation (prose)   | `# ` + text (`#`, exactly one space, text) | Explains something. Never uncommented.      |
-  | Commented configuration | `#` + the exact YAML line, no added space  | Valid YAML once the `#` is removed.         |
-  | Per-key documentation   | Trailing ` # (Required)/(Optional) …`      | Stays with the key after it is uncommented. |
+  | Kind                    | Syntax                                                  | Purpose                                     |
+  |-------------------------|---------------------------------------------------------|---------------------------------------------|
+  | Documentation (prose)   | `# ` + text, at the indentation of the block it describes | Explains something. Never uncommented.    |
+  | Commented configuration | `# ` + the YAML line, with `#` at the key's own indentation | Valid YAML once `# ` is removed.        |
+  | Per-key documentation   | Trailing ` # (Required)/(Optional) …`                   | Stays with the key after it is uncommented. |
 
   Rules:
-  1. Write the configuration as valid YAML first (2-space indentation, no tabs). Then put a
-     single `#` at column 0 of every line. Do not add a space after the `#` and do not
-     re-indent.
-  2. Removing one leading `#` from each line must give valid YAML at the right nesting
-     level. A top-level key ends up at column 0.
+  1. Write the configuration as valid YAML first (2-space indentation, no tabs). Then insert
+     `# ` right before the first non-space character of each line. Do not move the `#` to
+     column 0, do not leave out the space, and do not add extra spaces after it.
+  2. Removing the first `# ` from each line must give valid YAML at the right nesting level.
   3. Put each key's `(Required)`/`(Optional)` description, default and valid values in a
      trailing comment on that key's line, so the description stays when the key is
      uncommented.
   4. Put prose above a configuration block, never between its lines. If a description is
      too long for a trailing comment, move it into the prose above the block.
-  5. With 2-space indentation, a configuration line never has exactly one space after the
-     `#`. That makes the two kinds easy to tell apart: `# X` is prose, while `#X` and
-     `#  X` are configuration.
+  5. Start prose with a capital letter, and never with `word:` or `- `, so it cannot be
+     mistaken for configuration (for example, write `# Note -` rather than `# note:`).
 
   Correct:
   ```yaml
   # Module settings. Uncomment the keys you need.
   name: "my-service"              # (Required) Resource name. Lowercase, max 32 chars.
-  #settings:                      # (Optional) Module settings object. Default: {}.
-  #  state: "present"             # (Optional) Desired state: present | absent. Default: present.
-  #  tags:                        # (Optional) Extra tags map. Default: {}.
-  #    owner: "platform-team"
-  #  subnets:                     # (Optional) Subnet IDs. Default: [].
-  #    - "subnet-0abc123"
+  # settings:                     # (Optional) Module settings object. Default: {}.
+    # state: "present"            # (Optional) Desired state: present | absent. Default: present.
+    # tags:                       # (Optional) Extra tags map. Default: {}.
+      # owner: "platform-team"
+    # subnets:                    # (Optional) Subnet IDs. Default: [].
+      # - "subnet-0abc123"
   ```
 
-  Incorrect (the space after `#` shifts every line by one column when uncommented):
+  Incorrect:
   ```yaml
-  # settings:                     # becomes " settings:", which is invalid
-  #   state: "present"            # becomes "   state:", which is misaligned
+  #settings:                      # no space after "#"
+  #  state: "present"             # "#" at column 0 instead of at the key's indentation
   ```
+- <a id="boilerplate-inputs-editor-setup"></a>**Editor setup**: When creating or editing `.boilerplate/inputs.yaml` or the
+  commented YAML blocks in `variables-*.tf`, check which editor the operator uses, once per
+  session. Look for `TERM_PROGRAM=vscode`, `TERMINAL_EMULATOR=JetBrains-JediTerm`, or a
+  connected IDE MCP server. If none of these settles it, ask.
+  - **VS Code**: no action. Its toggle-comment already inserts and removes `# `.
+  - **IntelliJ IDEs** (IntelliJ IDEA, PyCharm, GoLand, WebStorm, …): the YAML comment
+    settings must be the following, in *Settings → Editor → Code Style → YAML → Code
+    Generation → Comment Code*:
+
+    | Setting                           | Value    |
+    |-----------------------------------|----------|
+    | Line comment at first column      | Disabled |
+    | Add a space at line comment start | Enabled  |
+    | Enforce on reformat               | Enabled  |
+
+    Apply them to the IDE-level **Default** scheme (not a project scheme), so they cover
+    every project. If a JetBrains IDE MCP server is connected and can change code style
+    settings, ask the operator for approval first, then apply them. Otherwise, show the
+    table above as a recommendation and let the operator change the settings.
+  - **Other editors**: tell the operator that uncommenting must remove `# ` after the
+    leading whitespace, and that commenting must insert `# `.
 - **Complex objects**: Expand all sub-keys of object variables (e.g., `settings`) as
   commented configuration using the syntax above, even when the default is `{}`. This makes
   all available options visible to the operator without them needing to read the Terraform
   source.
 - **Validation**: Before committing, both checks must pass:
   ```sh
-  # Uncommenting every configuration line must produce valid YAML
-  grep -Ev '^# [^ ]|^#$' .boilerplate/inputs.yaml | sed 's/^#//' | yq '.' >/dev/null
-  # No configuration line may be written as prose ("# key:"); this must print nothing
-  grep -nE '^# [a-z_][a-z0-9_]*:( |$)' .boilerplate/inputs.yaml
+  # Uncommenting every configuration line must produce valid YAML (prose lines are dropped)
+  sed -E -e 's/^([[:space:]]*)# ([a-z0-9_][A-Za-z0-9_.-]*:( |$)|- )/\1\2/' \
+    -e '/^[[:space:]]*#/d' .boilerplate/inputs.yaml | yq '.' >/dev/null
+  # Every comment must start with exactly "# "; this must print nothing
+  grep -nE '^[[:space:]]*#([^ ]|  +)' .boilerplate/inputs.yaml
   ```
 - **Module transformations**: If the module transforms an input value before passing it to the provider (e.g., converting a region string to uppercase-underscore format for the Atlas API), document both the expected input format and the resulting API value in the comment.
 - **Sync on change**: Whenever a variable is added, removed, or modified in `variables-*.tf`, update `.boilerplate/inputs.yaml` accordingly in the same commit.
